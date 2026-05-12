@@ -164,7 +164,7 @@ export default function GameScreen({ mode, onExit }: Props) {
         onDabDetected={handleDabDetected}
         onFalseStart={handleFalseStart}
       />
-      {!showTutorial && <GameTimer gameState={gameState} onStateChange={go} />}
+      {!showTutorial && <GameTimer gameState={gameState} onStateChange={go} mode={mode} />}
 
       <button
         onClick={onExit}
