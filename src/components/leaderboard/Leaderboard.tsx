@@ -90,7 +90,7 @@ export default function Leaderboard() {
                       {i === 0 ? (
                         <span className="text-yellow-300">
                           {score.username}
-                          <span className="ml-2 text-xs font-normal text-yellow-600 tracking-wide">King Dab</span>
+                          <span className="ml-2 text-xs font-normal text-yellow-600 tracking-wide">{tab === 'single' ? 'Reflex God' : 'Most Dabs'}</span>
                         </span>
                       ) : (
                         <span className="text-white">{score.username}</span>

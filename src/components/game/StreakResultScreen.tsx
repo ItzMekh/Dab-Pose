@@ -107,8 +107,8 @@ export default function StreakResultScreen({ result, onRetry, onExit }: Props) {
             transition={{ type: 'spring', stiffness: 300, damping: 18 }}
             className="bg-yellow-400/10 border border-yellow-400/40 rounded-2xl px-4 py-3"
           >
-            <p className="text-3xl">👑</p>
-            <p className="text-yellow-300 font-black text-lg tracking-wide">KING DAB</p>
+            <p className="text-3xl">🔥</p>
+            <p className="text-yellow-300 font-black text-lg tracking-wide">MOST DABS</p>
             <p className="text-yellow-500 text-xs">Most dabs in 30 seconds</p>
           </motion.div>
         )}

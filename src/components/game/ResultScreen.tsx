@@ -108,9 +108,9 @@ export default function ResultScreen({ result, onRetry, onExit }: Props) {
             transition={{ type: 'spring', stiffness: 300, damping: 18 }}
             className="bg-yellow-400/10 border border-yellow-400/40 rounded-2xl px-4 py-3"
           >
-            <p className="text-3xl">👑</p>
-            <p className="text-yellow-300 font-black text-lg tracking-wide">KING DAB</p>
-            <p className="text-yellow-500 text-xs">You&apos;re the fastest dabber alive</p>
+            <p className="text-3xl">⚡</p>
+            <p className="text-yellow-300 font-black text-lg tracking-wide">REFLEX GOD</p>
+            <p className="text-yellow-500 text-xs">Fastest reaction on the leaderboard</p>
           </motion.div>
         )}
       </AnimatePresence>
