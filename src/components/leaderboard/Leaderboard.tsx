@@ -118,8 +118,13 @@ export default function Leaderboard() {
         </motion.div>
       </AnimatePresence>
 
-      <a href="/" className="block text-center text-gray-500 hover:text-purple-400 text-sm transition-colors">
-        ← Play Now
+      <a
+        href="/"
+        className="group flex items-center justify-center gap-3 w-full bg-gradient-to-r from-purple-600 to-purple-500 hover:from-purple-500 hover:to-purple-400 text-white font-black text-lg py-4 rounded-2xl transition-all duration-200 shadow-lg shadow-purple-900/40 hover:shadow-purple-700/50 hover:scale-[1.02] active:scale-[0.98]"
+      >
+        <span className="text-2xl group-hover:animate-bounce">🙌</span>
+        Play Now
+        <span className="text-purple-300 font-normal text-sm">→</span>
       </a>
     </div>
   )
