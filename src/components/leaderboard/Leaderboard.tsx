@@ -66,7 +66,7 @@ export default function Leaderboard() {
                     ? <th className="p-4 text-right">Time (ms)</th>
                     : <th className="p-4 text-right">Dabs / 30s</th>
                   }
-                  <th className="p-4 text-right hidden sm:table-cell">Date</th>
+                  <th className="p-4 text-right hidden sm:table-cell">Date & Time</th>
                 </tr>
               </thead>
               <tbody>
@@ -95,7 +95,15 @@ export default function Leaderboard() {
                       {tab === 'single' ? score.time_ms : score.count}
                     </td>
                     <td className="p-4 text-right hidden sm:table-cell text-gray-600 text-xs font-mono">
-                      {new Date(score.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })}
+                      {(() => {
+                        const d = new Date(score.created_at)
+                        const dd = String(d.getDate()).padStart(2, '0')
+                        const mm = String(d.getMonth() + 1).padStart(2, '0')
+                        const yyyy = d.getFullYear()
+                        const hh = String(d.getHours()).padStart(2, '0')
+                        const min = String(d.getMinutes()).padStart(2, '0')
+                        return `${dd}/${mm}/${yyyy} ${hh}:${min}`
+                      })()}
                     </td>
                   </motion.tr>
                 ))}
