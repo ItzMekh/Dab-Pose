@@ -66,6 +66,7 @@ export default function Leaderboard() {
                     ? <th className="p-4 text-right">Time (ms)</th>
                     : <th className="p-4 text-right">Dabs / 30s</th>
                   }
+                  <th className="p-4 text-right hidden sm:table-cell">Date</th>
                 </tr>
               </thead>
               <tbody>
@@ -91,10 +92,10 @@ export default function Leaderboard() {
                       )}
                     </td>
                     <td className="p-4 text-right font-mono text-purple-300 font-bold">
-                      {tab === 'single'
-                        ? score.time_ms
-                        : score.count
-                      }
+                      {tab === 'single' ? score.time_ms : score.count}
+                    </td>
+                    <td className="p-4 text-right hidden sm:table-cell text-gray-600 text-xs font-mono">
+                      {new Date(score.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })}
                     </td>
                   </motion.tr>
                 ))}
