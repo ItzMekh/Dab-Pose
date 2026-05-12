@@ -1,9 +1,10 @@
 'use client'
 
 import { useState } from 'react'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import type { GameResult } from '@/types'
 import { submitScore, validateUsername } from '@/lib/api'
+import { useUsername } from '@/hooks/useUsername'
 
 interface Props {
   result: GameResult
@@ -25,11 +26,13 @@ function getRating(ms: number) {
 }
 
 export default function ResultScreen({ result, onRetry, onExit }: Props) {
-  const [username, setUsername] = useState('')
+  const { username, setUsername, saveUsername } = useUsername()
   const [validationErr, setValidationErr] = useState<string | null>(null)
   const [submitted, setSubmitted] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [submitErr, setSubmitErr] = useState<string | null>(null)
+  const [percentile, setPercentile] = useState<number | null>(null)
+  const [isKing, setIsKing] = useState(false)
   const rating = getRating(result.time_ms)
 
   const handleSubmit = async () => {
@@ -41,6 +44,9 @@ export default function ResultScreen({ result, onRetry, onExit }: Props) {
     const res = await submitScore({ username: username.trim(), time_ms: result.time_ms })
     setSubmitting(false)
     if (res.ok) {
+      saveUsername(username)
+      setPercentile(res.percentile ?? null)
+      setIsKing(res.isKing ?? false)
       setSubmitted(true)
     } else {
       setSubmitErr(res.error ?? 'Failed to save score')
@@ -54,6 +60,22 @@ export default function ResultScreen({ result, onRetry, onExit }: Props) {
       transition={{ duration: 0.35 }}
       className="text-center space-y-5 p-4 sm:p-6 w-full max-w-sm mx-auto"
     >
+      {/* King Dab banner */}
+      <AnimatePresence>
+        {isKing && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.7, y: -20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            transition={{ type: 'spring', stiffness: 300, damping: 18 }}
+            className="bg-yellow-400/10 border border-yellow-400/40 rounded-2xl px-4 py-3"
+          >
+            <p className="text-3xl">👑</p>
+            <p className="text-yellow-300 font-black text-lg tracking-wide">KING DAB</p>
+            <p className="text-yellow-500 text-xs">You&apos;re the fastest dabber alive</p>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Score card */}
       <div className="bg-white/5 border border-white/10 backdrop-blur-xl rounded-3xl p-7 space-y-3">
         <p className={`text-2xl font-black tracking-wide ${rating.color}`}>{rating.label}</p>
@@ -64,6 +86,21 @@ export default function ResultScreen({ result, onRetry, onExit }: Props) {
         <p className="text-gray-500 text-sm">
           {result.dabArm === 'left' ? 'Left' : 'Right'} arm · {(result.time_ms / 1000).toFixed(3)}s
         </p>
+
+        {/* Percentile badge */}
+        <AnimatePresence>
+          {percentile !== null && (
+            <motion.div
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="pt-1"
+            >
+              <span className="inline-block bg-purple-500/15 border border-purple-500/30 text-purple-300 text-xs font-semibold px-3 py-1.5 rounded-full">
+                Faster than {percentile}% of players
+              </span>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       {/* Submit form */}

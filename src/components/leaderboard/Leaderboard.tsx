@@ -43,12 +43,21 @@ export default function Leaderboard() {
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: i * 0.05 }}
-                  className="border-b border-white/5 hover:bg-white/5 transition-colors"
+                  className={`border-b border-white/5 hover:bg-white/5 transition-colors ${i === 0 ? 'bg-yellow-400/5' : ''}`}
                 >
                   <td className="p-4 text-gray-400 font-mono">
-                    {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `#${i + 1}`}
+                    {i === 0 ? '👑' : i === 1 ? '🥈' : i === 2 ? '🥉' : `#${i + 1}`}
                   </td>
-                  <td className="p-4 text-white font-semibold">{score.username}</td>
+                  <td className="p-4 font-semibold">
+                    {i === 0 ? (
+                      <span className="text-yellow-300">
+                        {score.username}
+                        <span className="ml-2 text-xs font-normal text-yellow-600 tracking-wide">King Dab</span>
+                      </span>
+                    ) : (
+                      <span className="text-white">{score.username}</span>
+                    )}
+                  </td>
                   <td className="p-4 text-right font-mono text-purple-300 font-bold">{score.time_ms}</td>
                 </motion.tr>
               ))}

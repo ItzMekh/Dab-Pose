@@ -40,6 +40,8 @@ export interface SubmitPayload {
 export interface SubmitResult {
   ok: boolean
   error?: string
+  percentile?: number
+  isKing?: boolean
 }
 
 export async function submitScore(payload: SubmitPayload): Promise<SubmitResult> {
@@ -56,7 +58,8 @@ export async function submitScore(payload: SubmitPayload): Promise<SubmitResult>
       const body = await res.json().catch(() => ({}))
       return { ok: false, error: body.error ?? 'Submission failed' }
     }
-    return { ok: true }
+    const data = await res.json().catch(() => ({}))
+    return { ok: true, percentile: data.percentile, isKing: data.isKing }
   } catch {
     return { ok: false, error: 'Network error — score not saved' }
   }

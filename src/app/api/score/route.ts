@@ -23,6 +23,7 @@ export async function POST(req: NextRequest) {
   }
 
   const supabase = createClient()
+
   const { data, error } = await supabase
     .from('scores')
     .insert({ username: username.trim(), time_ms })
@@ -30,5 +31,17 @@ export async function POST(req: NextRequest) {
     .single()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-  return NextResponse.json(data, { status: 201 })
+
+  // Percentile: how many players have a strictly faster time
+  const [{ count: betterCount }, { count: totalCount }] = await Promise.all([
+    supabase.from('scores').select('*', { count: 'exact', head: true }).lt('time_ms', time_ms),
+    supabase.from('scores').select('*', { count: 'exact', head: true }),
+  ])
+
+  const total = totalCount ?? 1
+  const better = betterCount ?? 0
+  const percentile = Math.round(((total - better) / total) * 100)
+  const isKing = better === 0
+
+  return NextResponse.json({ ...data, percentile, isKing }, { status: 201 })
 }
