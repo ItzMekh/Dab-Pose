@@ -45,6 +45,9 @@ coverage/
 playwright-report/
 test-results/
 
+# Testing config
+playwright.config.ts
+
 # AI / agent context files
 CLAUDE.md
 SKILL.md
