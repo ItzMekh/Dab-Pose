@@ -12,11 +12,9 @@ interface Props {
 export default function GameTimer({ gameState, onStateChange }: Props) {
   const [count, setCount] = useState(3)
   const t1 = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const t2 = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const clearTimers = useCallback(() => {
     if (t1.current) { clearTimeout(t1.current); t1.current = null }
-    if (t2.current) { clearTimeout(t2.current); t2.current = null }
   }, [])
 
   useEffect(() => {
@@ -37,31 +35,21 @@ export default function GameTimer({ gameState, onStateChange }: Props) {
           t1.current = setTimeout(tick, 1000)
         } else {
           setCount(0)
-          onStateChange('waiting')
-          // signal timeout set in 'waiting' branch — not here,
-          // because calling onStateChange above re-runs this effect
-          // and would immediately cancel t2 via clearTimers()
+          onStateChange('signal')
         }
       }
       t1.current = setTimeout(tick, 1000)
       return clearTimers
     }
-
-    if (gameState === 'waiting') {
-      const delay = 1200 + Math.random() * 2000
-      t1.current = setTimeout(() => onStateChange('signal'), delay)
-      return clearTimers
-    }
   }, [gameState, onStateChange, clearTimers])
 
   const borderClass =
-    gameState === 'signal'  ? 'border-green-400 bg-transparent' :
-    gameState === 'waiting' ? 'border-purple-500/40 bg-transparent' :
+    gameState === 'signal' ? 'border-green-400 bg-transparent' :
     'border-purple-500/20 bg-transparent'
 
   return (
     <div
-      className={`absolute inset-0 rounded-2xl border-4 pointer-events-none transition-colors duration-200 flex items-center justify-center ${borderClass}`}
+      className={`absolute inset-0 border-4 pointer-events-none transition-colors duration-200 flex items-center justify-center ${borderClass}`}
       style={{ willChange: 'border-color' }}
     >
       <AnimatePresence mode="wait">
@@ -75,16 +63,6 @@ export default function GameTimer({ gameState, onStateChange }: Props) {
             className="text-8xl font-black text-white drop-shadow-2xl tabular-nums"
           >
             {count}
-          </motion.span>
-        )}
-        {gameState === 'waiting' && (
-          <motion.span
-            key="wait"
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="text-3xl font-black text-white tracking-widest uppercase px-6 py-3 rounded-2xl bg-black/60 backdrop-blur-sm border border-white/20"
-          >
-            Get Ready…
           </motion.span>
         )}
         {gameState === 'signal' && (

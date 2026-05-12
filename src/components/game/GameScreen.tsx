@@ -174,13 +174,14 @@ export default function GameScreen({ mode, onExit }: Props) {
         {showSwitchArm && (
           <motion.div
             key="switch-arm"
-            initial={{ opacity: 0, scale: 0.85 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0 }}
-            className="absolute inset-0 bg-yellow-950/80 flex flex-col items-center justify-center pointer-events-none z-10"
+            initial={{ opacity: 0, y: -16 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -16 }}
+            className="absolute top-16 inset-x-0 flex justify-center pointer-events-none z-20"
           >
-            <p className="text-5xl font-black text-yellow-300">SWITCH ARM!</p>
-            <p className="text-yellow-600 text-sm mt-1">Alternate left ↔ right</p>
+            <div className="bg-yellow-400/20 border border-yellow-400/50 backdrop-blur-sm text-yellow-300 font-black text-lg px-6 py-2.5 rounded-2xl">
+              SWITCH ARM! ↔
+            </div>
           </motion.div>
         )}
         {!showSwitchArm && gameState === 'false_start' && (

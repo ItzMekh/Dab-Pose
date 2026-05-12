@@ -2,7 +2,7 @@ import type { GameState } from '@/types'
 
 const ALLOWED: Record<GameState, GameState[]> = {
   idle:        ['countdown'],
-  countdown:   ['waiting'],
+  countdown:   ['signal'],
   waiting:     ['signal', 'false_start'],
   signal:      ['detected', 'false_start'],
   detected:    ['result', 'signal'],
