@@ -44,3 +44,13 @@ next-env.d.ts
 coverage/
 playwright-report/
 test-results/
+
+# AI / agent context files
+CLAUDE.md
+SKILL.md
+docs/
+.obsidian/
+.playwright-mcp/
+*.png
+*.jpg
+*.jpeg

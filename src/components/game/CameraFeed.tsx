@@ -191,7 +191,7 @@ export default function CameraFeed({ gameState, onDabDetected, onFalseStart }: P
   const guideVisible = !(ready && poseDetected)
 
   return (
-    <div className="relative w-full h-full sm:aspect-video sm:h-auto bg-black sm:rounded-2xl overflow-hidden">
+    <div className="relative w-full h-full bg-black overflow-hidden">
       <video
         ref={videoRef}
         autoPlay
