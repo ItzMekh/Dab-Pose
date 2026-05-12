@@ -12,12 +12,15 @@ interface Props {
 
 export default function GameTimer({ gameState, onStateChange, mode }: Props) {
   const [count, setCount] = useState(3)
+  const [showGo, setShowGo] = useState(false)
   const t1 = useRef<ReturnType<typeof setTimeout> | null>(null)
   const t2 = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const t3 = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const clearTimers = useCallback(() => {
     if (t1.current) { clearTimeout(t1.current); t1.current = null }
     if (t2.current) { clearTimeout(t2.current); t2.current = null }
+    if (t3.current) { clearTimeout(t3.current); t3.current = null }
   }, [])
 
   useEffect(() => {
@@ -51,8 +54,13 @@ export default function GameTimer({ gameState, onStateChange, mode }: Props) {
     }
 
     if (gameState === 'waiting') {
+      setShowGo(false)
       const delay = Math.random() * 2000 + 1000 // 1000–3000ms
-      t2.current = setTimeout(() => onStateChange('signal'), delay)
+      t2.current = setTimeout(() => {
+        setShowGo(true)
+        onStateChange('signal')
+        t3.current = setTimeout(() => setShowGo(false), 400)
+      }, delay)
       return clearTimers
     }
   }, [gameState, onStateChange, clearTimers, mode])
@@ -92,7 +100,19 @@ export default function GameTimer({ gameState, onStateChange, mode }: Props) {
             Get Ready...
           </motion.span>
         )}
-        {gameState === 'signal' && (
+        {gameState === 'signal' && showGo && (
+          <motion.span
+            key="go"
+            initial={{ scale: 0.5, opacity: 0 }}
+            animate={{ scale: 1.2, opacity: 1 }}
+            exit={{ scale: 1.6, opacity: 0 }}
+            transition={{ duration: 0.15 }}
+            className="text-8xl font-black text-green-300 drop-shadow-2xl"
+          >
+            GO!
+          </motion.span>
+        )}
+        {gameState === 'signal' && !showGo && (
           <motion.span
             key="signal"
             initial={{ scale: 0.4, opacity: 0 }}
