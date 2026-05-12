@@ -9,7 +9,7 @@ export async function GET(req: NextRequest) {
     .from('scores')
     .select('id, username, time_ms, count, mode, created_at')
     .eq('mode', mode)
-    .limit(50)
+    .limit(100)
 
   const { data, error } = mode === 'streak'
     ? await query.order('count', { ascending: false })
