@@ -5,8 +5,8 @@ const ALLOWED: Record<GameState, GameState[]> = {
   countdown:   ['waiting'],
   waiting:     ['signal', 'false_start'],
   signal:      ['detected', 'false_start'],
-  detected:    ['result'],
-  false_start: ['result', 'idle'],
+  detected:    ['result', 'signal'],
+  false_start: ['result', 'idle', 'signal'],
   result:      ['idle'],
 }
 

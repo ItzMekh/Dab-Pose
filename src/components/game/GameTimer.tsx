@@ -82,7 +82,7 @@ export default function GameTimer({ gameState, onStateChange }: Props) {
             key="wait"
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
-            className="text-xl font-semibold text-gray-400 tracking-widest uppercase"
+            className="text-3xl font-black text-white tracking-widest uppercase px-6 py-3 rounded-2xl bg-black/60 backdrop-blur-sm border border-white/20"
           >
             Get Ready…
           </motion.span>

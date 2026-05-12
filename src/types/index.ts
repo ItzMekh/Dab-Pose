@@ -7,6 +7,14 @@ export type GameState =
   | 'false_start'
   | 'result'
 
+export type GameMode = 'single' | 'streak'
+
+export interface StreakResult {
+  count: number
+  duration_s: number
+  best_time_ms: number | null
+}
+
 export type CameraErrorCode =
   | 'NotAllowedError'
   | 'NotFoundError'

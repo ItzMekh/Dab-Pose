@@ -1,48 +1,137 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import type { GameState, GameResult } from '@/types'
+import type { GameState, GameResult, GameMode, StreakResult } from '@/types'
 import { transition } from '@/lib/game-state'
 import CameraFeed from './CameraFeed'
 import GameTimer from './GameTimer'
 import ResultScreen from './ResultScreen'
+import StreakHUD from './StreakHUD'
+import StreakResultScreen from './StreakResultScreen'
 
 interface Props {
+  mode: GameMode
   onExit: () => void
 }
 
-export default function GameScreen({ onExit }: Props) {
+export default function GameScreen({ mode, onExit }: Props) {
   const [gameState, setGameState] = useState<GameState>('idle')
   const [result, setResult] = useState<GameResult | null>(null)
+
+  // Streak-specific state
+  const [streakCount, setStreakCount] = useState(0)
+  const [timeLeft, setTimeLeft] = useState(30)
+  const [streakBest, setStreakBest] = useState<number | null>(null)
+  const [streakDone, setStreakDone] = useState(false)
+
+  const streakIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const streakStartedRef = useRef(false)
 
   const go = useCallback((to: GameState) => {
     setGameState(prev => transition(prev, to))
   }, [])
 
+  // Start 30s countdown when signal fires for the first time in streak mode
+  useEffect(() => {
+    if (mode !== 'streak') return
+    if (gameState === 'signal' && !streakStartedRef.current) {
+      streakStartedRef.current = true
+      streakIntervalRef.current = setInterval(() => {
+        setTimeLeft(prev => {
+          if (prev <= 1) {
+            if (streakIntervalRef.current) {
+              clearInterval(streakIntervalRef.current)
+              streakIntervalRef.current = null
+            }
+            setStreakDone(true)
+            return 0
+          }
+          return prev - 1
+        })
+      }, 1000)
+    }
+  }, [gameState, mode])
+
+  // When streak timer hits 0, transition to result
+  useEffect(() => {
+    if (streakDone) {
+      setGameState('result')
+    }
+  }, [streakDone])
+
+  // Cleanup interval on unmount
+  useEffect(() => {
+    return () => {
+      if (streakIntervalRef.current) {
+        clearInterval(streakIntervalRef.current)
+      }
+    }
+  }, [])
+
   const handleDabDetected = useCallback((res: GameResult) => {
-    setResult(res)
-    go('detected')
-    // detected → result after brief delay so overlay shows
-    setTimeout(() => go('result'), 600)
-  }, [go])
+    if (mode === 'streak') {
+      setStreakCount(c => c + 1)
+      setStreakBest(prev => {
+        if (prev === null) return res.time_ms
+        return res.time_ms < prev ? res.time_ms : prev
+      })
+      go('detected')
+      setTimeout(() => go('signal'), 400)
+    } else {
+      setResult(res)
+      go('detected')
+      setTimeout(() => go('result'), 600)
+    }
+  }, [go, mode])
 
   const handleFalseStart = useCallback(() => {
-    go('false_start')
-    setTimeout(() => go('idle'), 2200)
-  }, [go])
+    if (mode === 'streak') {
+      // False start in streak: skip penalty, just go back to signal after 1s
+      go('false_start')
+      setTimeout(() => go('signal'), 1000)
+    } else {
+      go('false_start')
+      setTimeout(() => go('idle'), 2200)
+    }
+  }, [go, mode])
 
   const handleRetry = useCallback(() => {
+    // Clear streak interval before resetting
+    if (streakIntervalRef.current) {
+      clearInterval(streakIntervalRef.current)
+      streakIntervalRef.current = null
+    }
+    streakStartedRef.current = false
     setResult(null)
+    setStreakCount(0)
+    setTimeLeft(30)
+    setStreakBest(null)
+    setStreakDone(false)
     go('idle')
   }, [go])
 
-  if (gameState === 'result' && result) {
+  // Streak result screen
+  if (mode === 'streak' && gameState === 'result') {
+    const streakResult: StreakResult = {
+      count: streakCount,
+      duration_s: 30,
+      best_time_ms: streakBest,
+    }
+    return <StreakResultScreen result={streakResult} onRetry={handleRetry} onExit={onExit} />
+  }
+
+  // Single mode result screen
+  if (mode === 'single' && gameState === 'result' && result) {
     return <ResultScreen result={result} onRetry={handleRetry} onExit={onExit} />
   }
 
   return (
-    <div className="relative w-full max-w-2xl mx-auto">
+    <div className="relative w-full max-w-4xl mx-auto">
+      {mode === 'streak' && (
+        <StreakHUD count={streakCount} timeLeft={timeLeft} />
+      )}
+
       <CameraFeed
         gameState={gameState}
         onDabDetected={handleDabDetected}

@@ -5,6 +5,7 @@ import dynamic from 'next/dynamic'
 import { useBrowserCompat } from '@/hooks/useBrowserCompat'
 import ErrorBoundary from '@/components/ErrorBoundary'
 import LandingScreen from '@/components/landing/LandingScreen'
+import type { GameMode } from '@/types'
 
 const GameScreen = dynamic(() => import('@/components/game/GameScreen'), {
   loading: () => (
@@ -28,6 +29,7 @@ function UnsupportedScreen({ missing }: { missing: string[] }) {
 
 export default function Home() {
   const [started, setStarted] = useState(false)
+  const [mode, setMode] = useState<GameMode>('single')
   const compat = useBrowserCompat()
 
   if (!compat.ok) return (
@@ -40,10 +42,10 @@ export default function Home() {
     <main className="min-h-screen bg-[#0a0a0f] flex items-center justify-center">
       {started ? (
         <ErrorBoundary>
-          <GameScreen onExit={() => setStarted(false)} />
+          <GameScreen mode={mode} onExit={() => setStarted(false)} />
         </ErrorBoundary>
       ) : (
-        <LandingScreen onStart={() => setStarted(true)} />
+        <LandingScreen onStart={(m) => { setMode(m); setStarted(true) }} />
       )}
     </main>
   )

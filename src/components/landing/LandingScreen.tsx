@@ -1,12 +1,16 @@
 'use client'
 
+import { useState } from 'react'
 import { motion } from 'framer-motion'
+import type { GameMode } from '@/types'
 
 interface Props {
-  onStart: () => void
+  onStart: (mode: GameMode) => void
 }
 
 export default function LandingScreen({ onStart }: Props) {
+  const [selectedMode, setSelectedMode] = useState<GameMode>('single')
+
   return (
     <div className="text-center space-y-8 p-8">
       <motion.div
@@ -36,13 +40,43 @@ export default function LandingScreen({ onStart }: Props) {
         </ol>
       </motion.div>
 
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.4 }}
+        className="flex gap-3 max-w-md mx-auto"
+      >
+        <button
+          onClick={() => setSelectedMode('single')}
+          className={`flex-1 border rounded-2xl px-4 py-4 text-left cursor-pointer transition-colors ${
+            selectedMode === 'single'
+              ? 'border-purple-500 bg-purple-500/10'
+              : 'border-white/10 bg-white/5 hover:bg-white/8'
+          }`}
+        >
+          <p className="text-white font-bold text-sm">Single Dab</p>
+          <p className="text-gray-400 text-xs mt-1">Fastest reaction wins</p>
+        </button>
+        <button
+          onClick={() => setSelectedMode('streak')}
+          className={`flex-1 border rounded-2xl px-4 py-4 text-left cursor-pointer transition-colors ${
+            selectedMode === 'streak'
+              ? 'border-purple-500 bg-purple-500/10'
+              : 'border-white/10 bg-white/5 hover:bg-white/8'
+          }`}
+        >
+          <p className="text-white font-bold text-sm">Streak Mode (30s)</p>
+          <p className="text-gray-400 text-xs mt-1">Dab as many times as you can in 30 seconds</p>
+        </button>
+      </motion.div>
+
       <motion.button
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ delay: 0.5 }}
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
-        onClick={onStart}
+        onClick={() => onStart(selectedMode)}
         className="bg-purple-600 hover:bg-purple-500 text-white font-bold text-xl px-12 py-4 rounded-2xl neon-pulse cursor-pointer"
       >
         Let's Go
