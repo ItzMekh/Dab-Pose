@@ -42,7 +42,6 @@ export default function GameTimer({ gameState, onStateChange, mode }: Props) {
         } else {
           setCount(0)
           if (mode === 'single') {
-            // Get Ready — random delay 1–3s before signal
             onStateChange('waiting')
           } else {
             onStateChange('signal')
@@ -55,7 +54,7 @@ export default function GameTimer({ gameState, onStateChange, mode }: Props) {
 
     if (gameState === 'waiting') {
       setShowGo(false)
-      const delay = Math.random() * 2000 + 1000 // 1000–3000ms
+      const delay = Math.random() * 2000 + 1000
       t2.current = setTimeout(() => {
         setShowGo(true)
         onStateChange('signal')
@@ -70,11 +69,20 @@ export default function GameTimer({ gameState, onStateChange, mode }: Props) {
     gameState === 'waiting' ? 'border-yellow-400/60 bg-transparent' :
     'border-purple-500/20 bg-transparent'
 
+  // Determine what text to show — no animation for waiting/GO
+  const getText = () => {
+    if (gameState === 'waiting') return { text: 'Get Ready...', cls: 'text-4xl text-yellow-300' }
+    if (gameState === 'signal' && showGo) return { text: 'GO!', cls: 'text-8xl text-green-300' }
+    return null
+  }
+
+  const snap = getText()
+
   return (
     <div
       className={`absolute inset-0 border-4 pointer-events-none flex items-center justify-center ${borderClass}`}
-      style={{ willChange: 'border-color' }}
     >
+      {/* Countdown — keep spring animation */}
       <AnimatePresence mode="wait">
         {gameState === 'countdown' && count > 0 && (
           <motion.span
@@ -88,35 +96,27 @@ export default function GameTimer({ gameState, onStateChange, mode }: Props) {
             {count}
           </motion.span>
         )}
-        {gameState === 'waiting' && (
-          <motion.span
-            key="waiting"
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.8 }}
-            transition={{ duration: 0.25 }}
-            className="text-4xl font-black text-yellow-300 drop-shadow-2xl"
-          >
-            Get Ready...
-          </motion.span>
-        )}
-        {gameState === 'signal' && showGo && (
-          <span key="go" className="text-8xl font-black text-green-300 drop-shadow-2xl">
-            GO!
-          </span>
-        )}
-        {gameState === 'signal' && !showGo && (
-          <motion.span
-            key="signal"
-            initial={{ scale: 0.4, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ type: 'spring', stiffness: 400, damping: 20 }}
-            className="text-7xl font-black text-green-300 drop-shadow-2xl"
-          >
-            DAB!
-          </motion.span>
-        )}
       </AnimatePresence>
+
+      {/* Get Ready / GO! — instant, no animation */}
+      {snap && (
+        <span className={`font-black drop-shadow-2xl ${snap.cls}`}>
+          {snap.text}
+        </span>
+      )}
+
+      {/* DAB! — spring pop after GO! fades */}
+      {gameState === 'signal' && !showGo && (
+        <motion.span
+          key="dab"
+          initial={{ scale: 0.4, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ type: 'spring', stiffness: 400, damping: 20 }}
+          className="text-7xl font-black text-green-300 drop-shadow-2xl"
+        >
+          DAB!
+        </motion.span>
+      )}
     </div>
   )
 }
