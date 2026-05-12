@@ -10,14 +10,17 @@ export default function Leaderboard() {
   const [tab, setTab] = useState<Tab>('single')
   const [scores, setScores] = useState<Score[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(false)
+  const [retry, setRetry] = useState(0)
 
   useEffect(() => {
     setLoading(true)
+    setError(false)
     fetch(`/api/leaderboard?mode=${tab}`)
-      .then(r => r.json())
+      .then(r => { if (!r.ok) throw new Error('fetch failed'); return r.json() })
       .then(data => { setScores(Array.isArray(data) ? data : []); setLoading(false) })
-      .catch(() => setLoading(false))
-  }, [tab])
+      .catch(() => { setError(true); setLoading(false) })
+  }, [tab, retry])
 
   return (
     <div className="w-full max-w-lg space-y-6 px-4 sm:px-0">
@@ -54,6 +57,8 @@ export default function Leaderboard() {
         >
           {loading ? (
             <div className="p-8 text-center text-gray-400">Loading...</div>
+          ) : error ? (
+            <div className="p-8 text-center text-red-400 text-sm">Failed to load scores. <button onClick={() => setRetry(r => r + 1)} className="underline cursor-pointer">Retry</button></div>
           ) : scores.length === 0 ? (
             <div className="p-8 text-center text-gray-400">No scores yet. Be the first!</div>
           ) : (

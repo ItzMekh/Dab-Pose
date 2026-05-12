@@ -36,12 +36,14 @@ export default function StreakResultScreen({ result, onRetry, onExit }: Props) {
   const rating = getRating(result.count)
 
   useEffect(() => {
-    fetchLeaderboard('streak').then(scores => {
-      const more = scores.filter(s => s.count !== null && s.count > result.count).length
-      const rank = more + 1
-      setPreviewRank(rank)
-      setIsNewRecord(rank === 1)
-    })
+    fetchLeaderboard('streak')
+      .then(scores => {
+        const more = scores.filter(s => s.count !== null && s.count > result.count).length
+        const rank = more + 1
+        setPreviewRank(rank)
+        setIsNewRecord(rank === 1)
+      })
+      .catch(() => { /* rank preview unavailable — silent degradation */ })
   }, [result.count])
 
   const handleSubmit = async () => {

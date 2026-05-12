@@ -41,12 +41,14 @@ export default function ResultScreen({ result, onRetry, onExit }: Props) {
   const rating = getRating(result.time_ms)
 
   useEffect(() => {
-    fetchLeaderboard('single').then(scores => {
-      const faster = scores.filter(s => s.time_ms !== null && s.time_ms < result.time_ms).length
-      const rank = faster + 1
-      setPreviewRank(rank)
-      setIsNewRecord(rank === 1)
-    })
+    fetchLeaderboard('single')
+      .then(scores => {
+        const faster = scores.filter(s => s.time_ms !== null && s.time_ms < result.time_ms).length
+        const rank = faster + 1
+        setPreviewRank(rank)
+        setIsNewRecord(rank === 1)
+      })
+      .catch(() => { /* rank preview unavailable — silent degradation */ })
   }, [result.time_ms])
 
   const handleSubmit = async () => {
