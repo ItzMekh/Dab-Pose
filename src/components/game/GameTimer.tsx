@@ -64,7 +64,7 @@ export default function GameTimer({ gameState, onStateChange, mode }: Props) {
 
   return (
     <div
-      className={`absolute inset-0 border-4 pointer-events-none transition-colors duration-300 flex items-center justify-center ${borderClass}`}
+      className={`absolute inset-0 border-4 pointer-events-none flex items-center justify-center ${borderClass}`}
       style={{ willChange: 'border-color' }}
     >
       <AnimatePresence mode="wait">
