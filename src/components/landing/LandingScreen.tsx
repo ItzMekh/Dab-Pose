@@ -107,7 +107,7 @@ export default function LandingScreen({ onStart }: Props) {
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
         onClick={() => onStart(selectedMode)}
-        className="bg-purple-600 hover:bg-purple-500 text-white font-black text-2xl sm:text-3xl px-16 py-5 rounded-2xl neon-pulse cursor-pointer w-full sm:w-auto"
+        className="bg-purple-600 hover:bg-purple-500 text-white font-black text-2xl sm:text-3xl px-16 py-5 rounded-2xl neon-pulse cursor-pointer w-full max-w-lg"
       >
         Let&apos;s Go 🙌
       </motion.button>
@@ -119,7 +119,7 @@ export default function LandingScreen({ onStart }: Props) {
         transition={{ delay: 0.55 }}
         whileHover={{ scale: 1.03 }}
         whileTap={{ scale: 0.97 }}
-        className="inline-flex items-center gap-3 bg-white/5 hover:bg-white/10 border border-white/15 hover:border-purple-500/40 text-white font-bold text-base px-8 py-4 rounded-2xl transition-all duration-200 cursor-pointer"
+        className="inline-flex items-center gap-3 bg-white/5 hover:bg-white/10 border border-white/15 hover:border-purple-500/40 text-white font-bold text-base px-8 py-4 rounded-2xl transition-all duration-200 cursor-pointer w-full max-w-lg justify-center"
       >
         <span className="text-xl">👑</span>
         <span>Leaderboard</span>
