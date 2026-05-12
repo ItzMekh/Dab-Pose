@@ -11,10 +11,10 @@ export const viewport: Viewport = {
 }
 
 export const metadata: Metadata = {
-  title: 'Dabspeed — How Fast Can You Dab?',
-  description: 'Test your dab speed with real-time pose detection. Go viral.',
+  title: 'Dab Pose — How Fast Can You Dab?',
+  description: 'Test your dab reaction speed with real-time pose detection.',
   openGraph: {
-    title: 'Dabspeed',
+    title: 'Dab Pose',
     description: 'How fast can you dab?',
     type: 'website',
   },

@@ -30,7 +30,9 @@ export interface CameraError {
 export interface Score {
   id: string
   username: string
-  time_ms: number
+  time_ms: number | null
+  count: number | null
+  mode: 'single' | 'streak'
   created_at: string
 }
 

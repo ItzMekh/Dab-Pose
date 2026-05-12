@@ -34,7 +34,9 @@ async function fetchWithRetry(
 
 export interface SubmitPayload {
   username: string
-  time_ms: number
+  time_ms?: number
+  mode?: 'single' | 'streak'
+  count?: number
 }
 
 export interface SubmitResult {
@@ -45,7 +47,7 @@ export interface SubmitResult {
 }
 
 export async function submitScore(payload: SubmitPayload): Promise<SubmitResult> {
-  if (payload.time_ms < MIN_SCORE_MS || payload.time_ms > MAX_SCORE_MS) {
+  if (payload.mode !== 'streak' && (payload.time_ms === undefined || payload.time_ms < MIN_SCORE_MS || payload.time_ms > MAX_SCORE_MS)) {
     return { ok: false, error: 'Invalid score' }
   }
   try {

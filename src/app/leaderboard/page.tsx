@@ -1,6 +1,6 @@
 import Leaderboard from '@/components/leaderboard/Leaderboard'
 
-export const metadata = { title: 'Leaderboard — Dabspeed' }
+export const metadata = { title: 'Leaderboard — Dab Pose' }
 
 export default function LeaderboardPage() {
   return (

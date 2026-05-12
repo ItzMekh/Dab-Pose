@@ -9,6 +9,7 @@ import GameTimer from './GameTimer'
 import ResultScreen from './ResultScreen'
 import StreakHUD from './StreakHUD'
 import StreakResultScreen from './StreakResultScreen'
+import TutorialOverlay from './TutorialOverlay'
 
 interface Props {
   mode: GameMode
@@ -16,6 +17,9 @@ interface Props {
 }
 
 export default function GameScreen({ mode, onExit }: Props) {
+  const [showTutorial, setShowTutorial] = useState(() =>
+    typeof window !== 'undefined' && !localStorage.getItem('dab_seen_intro')
+  )
   const [gameState, setGameState] = useState<GameState>('idle')
   const [result, setResult] = useState<GameResult | null>(null)
 
@@ -27,6 +31,11 @@ export default function GameScreen({ mode, onExit }: Props) {
 
   const streakIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const streakStartedRef = useRef(false)
+
+  const dismissTutorial = useCallback(() => {
+    localStorage.setItem('dab_seen_intro', '1')
+    setShowTutorial(false)
+  }, [])
 
   const go = useCallback((to: GameState) => {
     setGameState(prev => transition(prev, to))
@@ -137,7 +146,7 @@ export default function GameScreen({ mode, onExit }: Props) {
         onDabDetected={handleDabDetected}
         onFalseStart={handleFalseStart}
       />
-      <GameTimer gameState={gameState} onStateChange={go} />
+      {!showTutorial && <GameTimer gameState={gameState} onStateChange={go} />}
 
       <button
         onClick={onExit}
@@ -146,6 +155,10 @@ export default function GameScreen({ mode, onExit }: Props) {
       >
         ✕
       </button>
+
+      <AnimatePresence>
+        {showTutorial && <TutorialOverlay onDismiss={dismissTutorial} />}
+      </AnimatePresence>
 
       <AnimatePresence>
         {gameState === 'false_start' && (
