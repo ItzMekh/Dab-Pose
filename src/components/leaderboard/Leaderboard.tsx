@@ -16,13 +16,13 @@ export default function Leaderboard() {
   }, [])
 
   return (
-    <div className="w-full max-w-lg space-y-6">
+    <div className="w-full max-w-lg space-y-6 px-4 sm:px-0">
       <div className="text-center">
         <h1 className="text-4xl font-black text-white">Leaderboard</h1>
         <p className="text-gray-400">Fastest dabs worldwide</p>
       </div>
 
-      <div className="bg-white/5 border border-white/10 backdrop-blur-lg rounded-2xl overflow-hidden">
+      <div className="bg-white/5 border border-white/10 backdrop-blur-lg rounded-2xl overflow-hidden overflow-x-auto">
         {loading ? (
           <div className="p-8 text-center text-gray-400">Loading...</div>
         ) : scores.length === 0 ? (

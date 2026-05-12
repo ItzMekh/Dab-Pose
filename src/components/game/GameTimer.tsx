@@ -55,7 +55,7 @@ export default function GameTimer({ gameState, onStateChange }: Props) {
   }, [gameState, onStateChange, clearTimers])
 
   const borderClass =
-    gameState === 'signal'  ? 'border-green-500 bg-green-500/10' :
+    gameState === 'signal'  ? 'border-green-400 bg-transparent' :
     gameState === 'waiting' ? 'border-purple-500/40 bg-transparent' :
     'border-purple-500/20 bg-transparent'
 

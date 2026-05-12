@@ -24,6 +24,21 @@ export default function CameraFeed({ gameState, onDabDetected, onFalseStart }: P
   // poseDetected affects render (guide fade) → useState
   const [poseDetected, setPoseDetected] = useState(false)
 
+  // Landscape nudge for mobile portrait users
+  const [showLandscapeNudge, setShowLandscapeNudge] = useState(false)
+  useEffect(() => {
+    const check = () => setShowLandscapeNudge(
+      window.innerWidth < 640 && window.innerHeight > window.innerWidth
+    )
+    check()
+    window.addEventListener('resize', check)
+    window.addEventListener('orientationchange', check)
+    return () => {
+      window.removeEventListener('resize', check)
+      window.removeEventListener('orientationchange', check)
+    }
+  }, [])
+
   const videoRef = useRef<HTMLVideoElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const holisticRef = useRef<Awaited<ReturnType<typeof loadHolistic>> | null>(null)
@@ -176,7 +191,13 @@ export default function CameraFeed({ gameState, onDabDetected, onFalseStart }: P
   const guideVisible = !(ready && poseDetected)
 
   return (
-    <div className="relative w-full aspect-video bg-black rounded-2xl overflow-hidden">
+    <>
+      {showLandscapeNudge && (
+        <div className="bg-yellow-900/80 text-yellow-200 text-xs text-center py-2 px-4 rounded-xl mb-2">
+          Rotate phone to landscape for best experience
+        </div>
+      )}
+      <div className="relative w-full aspect-video bg-black rounded-2xl overflow-hidden">
       <video
         ref={videoRef}
         autoPlay
@@ -237,5 +258,6 @@ export default function CameraFeed({ gameState, onDabDetected, onFalseStart }: P
         </div>
       )}
     </div>
+    </>
   )
 }

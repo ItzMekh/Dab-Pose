@@ -11,20 +11,20 @@ export default function StreakHUD({ count, timeLeft }: Props) {
   const urgent = timeLeft <= 5
   return (
     <div className="absolute top-4 left-4 right-4 flex justify-between items-start z-10 pointer-events-none">
-      <div className="bg-black/60 backdrop-blur-sm border border-white/20 rounded-2xl px-5 py-3 text-center">
+      <div className="bg-black/60 backdrop-blur-sm border border-white/20 rounded-2xl px-3 py-2 sm:px-5 sm:py-3 text-center">
         <p className="text-gray-400 text-xs uppercase tracking-widest">Dabs</p>
         <motion.p
           key={count}
           initial={{ scale: 1.4 }}
           animate={{ scale: 1 }}
-          className="text-4xl font-black text-white tabular-nums"
+          className="text-3xl sm:text-4xl font-black text-white tabular-nums"
         >
           {count}
         </motion.p>
       </div>
-      <div className={`bg-black/60 backdrop-blur-sm border rounded-2xl px-5 py-3 text-center transition-colors ${urgent ? 'border-red-500/60' : 'border-white/20'}`}>
+      <div className={`bg-black/60 backdrop-blur-sm border rounded-2xl px-3 py-2 sm:px-5 sm:py-3 text-center transition-colors ${urgent ? 'border-red-500/60' : 'border-white/20'}`}>
         <p className="text-gray-400 text-xs uppercase tracking-widest">Time</p>
-        <p className={`text-4xl font-black tabular-nums ${urgent ? 'text-red-400' : 'text-white'}`}>
+        <p className={`text-3xl sm:text-4xl font-black tabular-nums ${urgent ? 'text-red-400' : 'text-white'}`}>
           {timeLeft}s
         </p>
       </div>

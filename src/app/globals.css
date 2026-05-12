@@ -1,5 +1,15 @@
 @import "tailwindcss";
 
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+@media (max-width: 768px) {
+  .game-container {
+    padding: 0;
+  }
+}
+
 :root {
   --background: #0a0a0f;
   --foreground: #f0f0ff;

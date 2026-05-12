@@ -77,11 +77,11 @@ export default function GameScreen({ mode, onExit }: Props) {
         return res.time_ms < prev ? res.time_ms : prev
       })
       go('detected')
-      setTimeout(() => go('signal'), 400)
+      setTimeout(() => go('signal'), 120)
     } else {
       setResult(res)
       go('detected')
-      setTimeout(() => go('result'), 600)
+      setTimeout(() => go('result'), 200)
     }
   }, [go, mode])
 
@@ -127,7 +127,7 @@ export default function GameScreen({ mode, onExit }: Props) {
   }
 
   return (
-    <div className="relative w-full max-w-4xl mx-auto">
+    <div className="relative w-full max-w-4xl mx-auto px-0 sm:px-4">
       {mode === 'streak' && (
         <StreakHUD count={streakCount} timeLeft={timeLeft} />
       )}
@@ -141,7 +141,7 @@ export default function GameScreen({ mode, onExit }: Props) {
 
       <button
         onClick={onExit}
-        className="absolute top-3 right-3 z-20 text-gray-500 hover:text-white text-lg leading-none bg-black/40 rounded-full w-8 h-8 flex items-center justify-center cursor-pointer"
+        className="absolute top-3 right-3 z-20 text-gray-500 hover:text-white text-lg leading-none bg-black/40 rounded-full w-10 h-10 sm:w-8 sm:h-8 flex items-center justify-center cursor-pointer"
         aria-label="Exit game"
       >
         ✕

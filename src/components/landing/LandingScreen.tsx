@@ -12,24 +12,24 @@ export default function LandingScreen({ onStart }: Props) {
   const [selectedMode, setSelectedMode] = useState<GameMode>('single')
 
   return (
-    <div className="text-center space-y-8 p-8">
+    <div className="text-center space-y-8 p-4 sm:p-8">
       <motion.div
         initial={{ opacity: 0, y: -40 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
       >
-        <h1 className="text-7xl font-black tracking-tight">
+        <h1 className="text-5xl sm:text-7xl font-black tracking-tight">
           <span className="text-white">DAB</span>
           <span className="text-purple-400">SPEED</span>
         </h1>
-        <p className="text-gray-400 mt-4 text-xl">How fast can you dab?</p>
+        <p className="text-gray-400 mt-4 text-base sm:text-xl">How fast can you dab?</p>
       </motion.div>
 
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.3 }}
-        className="bg-white/5 backdrop-blur-lg border border-white/10 rounded-2xl p-6 max-w-md mx-auto space-y-3 text-left"
+        className="bg-white/5 backdrop-blur-lg border border-white/10 rounded-2xl p-4 sm:p-6 max-w-md mx-auto space-y-3 text-left"
       >
         <h2 className="text-white font-semibold text-lg">How to play</h2>
         <ol className="text-gray-300 space-y-2 list-decimal list-inside text-sm">
@@ -44,7 +44,7 @@ export default function LandingScreen({ onStart }: Props) {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.4 }}
-        className="flex gap-3 max-w-md mx-auto"
+        className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto"
       >
         <button
           onClick={() => setSelectedMode('single')}
@@ -77,7 +77,7 @@ export default function LandingScreen({ onStart }: Props) {
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
         onClick={() => onStart(selectedMode)}
-        className="bg-purple-600 hover:bg-purple-500 text-white font-bold text-xl px-12 py-4 rounded-2xl neon-pulse cursor-pointer"
+        className="bg-purple-600 hover:bg-purple-500 text-white font-bold text-xl px-12 py-4 rounded-2xl neon-pulse cursor-pointer w-full sm:w-auto"
       >
         Let's Go
       </motion.button>

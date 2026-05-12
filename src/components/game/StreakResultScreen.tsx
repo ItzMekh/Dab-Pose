@@ -23,11 +23,11 @@ export default function StreakResultScreen({ result, onRetry, onExit }: Props) {
     <motion.div
       initial={{ opacity: 0, y: 32 }}
       animate={{ opacity: 1, y: 0 }}
-      className="text-center space-y-5 p-6 w-full max-w-sm mx-auto"
+      className="text-center space-y-5 p-4 sm:p-6 w-full max-w-sm mx-auto"
     >
       <div className="bg-white/5 border border-white/10 backdrop-blur-xl rounded-3xl p-7 space-y-3">
         <p className={`text-2xl font-black ${rating.color}`}>{rating.label}</p>
-        <p className="text-6xl font-black text-white tabular-nums">
+        <p className="text-5xl sm:text-6xl font-black text-white tabular-nums">
           {result.count}
           <span className="text-xl text-gray-500 ml-2 font-normal">dabs</span>
         </p>
