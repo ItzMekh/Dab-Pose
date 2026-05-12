@@ -137,12 +137,20 @@ export default function GameScreen({ mode, onExit }: Props) {
       duration_s: 30,
       best_time_ms: streakBest,
     }
-    return <StreakResultScreen result={streakResult} onRetry={handleRetry} onExit={onExit} />
+    return (
+      <div className="fixed inset-0 z-40 bg-[#0a0a0f] flex items-center justify-center overflow-y-auto">
+        <StreakResultScreen result={streakResult} onRetry={handleRetry} onExit={onExit} />
+      </div>
+    )
   }
 
   // Single mode result screen
   if (mode === 'single' && gameState === 'result' && result) {
-    return <ResultScreen result={result} onRetry={handleRetry} onExit={onExit} />
+    return (
+      <div className="fixed inset-0 z-40 bg-[#0a0a0f] flex items-center justify-center overflow-y-auto">
+        <ResultScreen result={result} onRetry={handleRetry} onExit={onExit} />
+      </div>
+    )
   }
 
   return (
