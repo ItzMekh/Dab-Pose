@@ -210,8 +210,11 @@ export default function ResultScreen({ result, onRetry, onExit }: Props) {
         </a>
       </div>
 
-      <button onClick={onExit} className="text-gray-600 hover:text-gray-400 text-xs cursor-pointer transition-colors">
-        ← Back to Home
+      <button
+        onClick={onExit}
+        className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border border-white/10 hover:border-white/20 text-gray-400 hover:text-white text-sm font-medium cursor-pointer transition-all bg-white/3 hover:bg-white/8"
+      >
+        🏠 Back to Home
       </button>
     </motion.div>
   )
