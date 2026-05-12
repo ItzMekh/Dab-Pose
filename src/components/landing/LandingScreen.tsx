@@ -13,7 +13,7 @@ const MODES = [
   {
     id: 'single' as GameMode,
     icon: Zap,
-    label: 'Single Dab',
+    label: 'Reflex Dab',
     sub: 'Fastest reaction wins',
     iconColor: 'text-yellow-400',
     iconBg: 'bg-yellow-400/10',
@@ -23,7 +23,7 @@ const MODES = [
   {
     id: 'streak' as GameMode,
     icon: Flame,
-    label: 'Streak Mode',
+    label: 'Dab Rush',
     sub: '30s — dab as many times as you can',
     iconColor: 'text-orange-400',
     iconBg: 'bg-orange-400/10',

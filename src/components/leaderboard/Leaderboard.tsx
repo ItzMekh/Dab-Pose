@@ -38,7 +38,7 @@ export default function Leaderboard() {
                 : 'text-gray-400 hover:text-white'
             }`}
           >
-            {t === 'single' ? '⚡ Single Dab' : '🔥 Streak Mode'}
+            {t === 'single' ? '⚡ Reflex Dab' : '🔥 Dab Rush'}
           </button>
         ))}
       </div>
