@@ -38,11 +38,18 @@ export default function GameTimer({ gameState, onStateChange }: Props) {
         } else {
           setCount(0)
           onStateChange('waiting')
-          const delay = 1200 + Math.random() * 2000
-          t2.current = setTimeout(() => onStateChange('signal'), delay)
+          // signal timeout set in 'waiting' branch — not here,
+          // because calling onStateChange above re-runs this effect
+          // and would immediately cancel t2 via clearTimers()
         }
       }
       t1.current = setTimeout(tick, 1000)
+      return clearTimers
+    }
+
+    if (gameState === 'waiting') {
+      const delay = 1200 + Math.random() * 2000
+      t1.current = setTimeout(() => onStateChange('signal'), delay)
       return clearTimers
     }
   }, [gameState, onStateChange, clearTimers])
