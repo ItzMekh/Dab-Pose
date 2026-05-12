@@ -1,7 +1,21 @@
+import type { Score } from '@/types'
+
 const MIN_SCORE_MS = 100
 const MAX_SCORE_MS = 30_000
 const USERNAME_RE = /^[a-zA-Z0-9_\- ]{1,20}$/
 const SUBMIT_TIMEOUT_MS = 5000
+
+export async function fetchLeaderboard(mode: 'single' | 'streak'): Promise<Score[]> {
+  try {
+    const res = await fetch(`/api/leaderboard?mode=${mode}`, {
+      signal: AbortSignal.timeout(5000),
+    })
+    if (!res.ok) return []
+    return res.json()
+  } catch {
+    return []
+  }
+}
 
 export function validateUsername(name: string): string | null {
   if (!name.trim()) return 'Name required'

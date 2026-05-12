@@ -1,9 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import type { StreakResult } from '@/types'
-import { submitScore, validateUsername } from '@/lib/api'
+import { submitScore, validateUsername, fetchLeaderboard } from '@/lib/api'
 import { useUsername } from '@/hooks/useUsername'
 
 interface Props {
@@ -28,7 +28,21 @@ export default function StreakResultScreen({ result, onRetry, onExit }: Props) {
   const [submitErr, setSubmitErr] = useState<string | null>(null)
   const [percentile, setPercentile] = useState<number | null>(null)
   const [isKing, setIsKing] = useState(false)
+
+  // Pre-submit rank preview
+  const [previewRank, setPreviewRank] = useState<number | null>(null)
+  const [isNewRecord, setIsNewRecord] = useState(false)
+
   const rating = getRating(result.count)
+
+  useEffect(() => {
+    fetchLeaderboard('streak').then(scores => {
+      const more = scores.filter(s => s.count !== null && s.count > result.count).length
+      const rank = more + 1
+      setPreviewRank(rank)
+      setIsNewRecord(rank === 1)
+    })
+  }, [result.count])
 
   const handleSubmit = async () => {
     const err = validateUsername(username)
@@ -59,9 +73,33 @@ export default function StreakResultScreen({ result, onRetry, onExit }: Props) {
       animate={{ opacity: 1, y: 0 }}
       className="text-center space-y-5 p-4 sm:p-6 w-full max-w-sm mx-auto"
     >
+      {/* NEW RECORD banner — pre-submit */}
       <AnimatePresence>
-        {isKing && (
+        {isNewRecord && !submitted && (
           <motion.div
+            key="new-record"
+            initial={{ scale: 0.5, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.8, opacity: 0 }}
+            transition={{ type: 'spring', stiffness: 350, damping: 18, delay: 0.15 }}
+            className="bg-yellow-400/10 border border-yellow-400/50 rounded-2xl px-4 py-4"
+          >
+            <motion.p
+              animate={{ scale: [1, 1.2, 1] }}
+              transition={{ repeat: Infinity, duration: 1.4, ease: 'easeInOut' }}
+              className="text-4xl"
+            >
+              🏆
+            </motion.p>
+            <p className="text-yellow-300 font-black text-2xl tracking-wide mt-1">NEW RECORD!</p>
+            <p className="text-yellow-600 text-xs mt-0.5">Most dabs in 30 seconds</p>
+          </motion.div>
+        )}
+
+        {/* King Dab banner — post-submit */}
+        {isKing && submitted && (
+          <motion.div
+            key="king-dab"
             initial={{ opacity: 0, scale: 0.7, y: -20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             transition={{ type: 'spring', stiffness: 300, damping: 18 }}
@@ -84,9 +122,25 @@ export default function StreakResultScreen({ result, onRetry, onExit }: Props) {
         {result.best_time_ms !== null && (
           <p className="text-gray-400 text-xs">Best single: {result.best_time_ms}ms</p>
         )}
-        <AnimatePresence>
-          {percentile !== null && (
+
+        {/* Rank badge — switches from preview to percentile after submit */}
+        <AnimatePresence mode="wait">
+          {!submitted && previewRank !== null && (
             <motion.div
+              key="rank-preview"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              className="pt-1"
+            >
+              <span className="inline-block bg-orange-500/15 border border-orange-500/30 text-orange-300 text-xs font-semibold px-3 py-1.5 rounded-full">
+                You would rank #{previewRank}
+              </span>
+            </motion.div>
+          )}
+          {submitted && percentile !== null && (
+            <motion.div
+              key="percentile"
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               className="pt-1"
