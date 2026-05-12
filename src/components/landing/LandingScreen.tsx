@@ -112,9 +112,19 @@ export default function LandingScreen({ onStart }: Props) {
         Let&apos;s Go 🙌
       </motion.button>
 
-      <a href="/leaderboard" className="block text-gray-500 hover:text-purple-400 text-sm transition-colors">
-        View Leaderboard →
-      </a>
+      <motion.a
+        href="/leaderboard"
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.55 }}
+        whileHover={{ scale: 1.03 }}
+        whileTap={{ scale: 0.97 }}
+        className="inline-flex items-center gap-3 bg-white/5 hover:bg-white/10 border border-white/15 hover:border-purple-500/40 text-white font-bold text-base px-8 py-4 rounded-2xl transition-all duration-200 cursor-pointer"
+      >
+        <span className="text-xl">👑</span>
+        <span>Leaderboard</span>
+        <span className="text-gray-500 text-sm font-normal">Top Dabbers →</span>
+      </motion.a>
     </div>
   )
 }
