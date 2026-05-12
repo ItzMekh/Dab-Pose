@@ -171,3 +171,4 @@ _Agents append discoveries here (date · agent · finding)_
 | 2026-05-12 | Initial scaffold: Next.js 15 + MediaPipe Holistic + Supabase |
 | 2026-05-12 | System design finalized: 3-frame confirmation, FPS monitor, ErrorBoundary |
 | 2026-05-12 | Karpathy llm-wiki pattern adopted: SKILL.md as living schema |
+| 2026-05-12 | Streak Mode added: GameMode union type, StreakResult, StreakHUD, StreakResultScreen. `detected → signal` added to ALLOWED_TRANSITIONS for streak cycling. 30s countdown via setInterval + useRef flag (starts on first `signal` state). false_start in streak goes back to signal after 1s (no idle reset). |
