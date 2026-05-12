@@ -101,16 +101,9 @@ export default function GameTimer({ gameState, onStateChange, mode }: Props) {
           </motion.span>
         )}
         {gameState === 'signal' && showGo && (
-          <motion.span
-            key="go"
-            initial={{ scale: 0.5, opacity: 0 }}
-            animate={{ scale: 1.2, opacity: 1 }}
-            exit={{ scale: 1.6, opacity: 0 }}
-            transition={{ duration: 0.15 }}
-            className="text-8xl font-black text-green-300 drop-shadow-2xl"
-          >
+          <span key="go" className="text-8xl font-black text-green-300 drop-shadow-2xl">
             GO!
-          </motion.span>
+          </span>
         )}
         {gameState === 'signal' && !showGo && (
           <motion.span
