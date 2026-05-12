@@ -36,6 +36,16 @@ export default function StreakResultScreen({ result, onRetry, onExit }: Props) {
   const rating = getRating(result.count)
 
   useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (document.activeElement?.tagName === 'INPUT') return
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onRetry() }
+      if (e.key === 'Escape') onExit()
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [onRetry, onExit])
+
+  useEffect(() => {
     fetchLeaderboard('streak')
       .then(scores => {
         const more = scores.filter(s => s.count !== null && s.count > result.count).length

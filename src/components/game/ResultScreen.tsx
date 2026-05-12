@@ -41,6 +41,16 @@ export default function ResultScreen({ result, onRetry, onExit }: Props) {
   const rating = getRating(result.time_ms)
 
   useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (document.activeElement?.tagName === 'INPUT') return
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onRetry() }
+      if (e.key === 'Escape') onExit()
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [onRetry, onExit])
+
+  useEffect(() => {
     fetchLeaderboard('single')
       .then(scores => {
         const faster = scores.filter(s => s.time_ms !== null && s.time_ms < result.time_ms).length
