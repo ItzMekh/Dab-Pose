@@ -127,7 +127,7 @@ export default function GameScreen({ mode, onExit }: Props) {
   }
 
   return (
-    <div className="relative w-full max-w-4xl mx-auto px-0 sm:px-4">
+    <div className="fixed inset-0 z-40 bg-black sm:relative sm:inset-auto sm:z-auto sm:bg-transparent sm:w-full sm:max-w-4xl sm:mx-auto sm:px-4">
       {mode === 'streak' && (
         <StreakHUD count={streakCount} timeLeft={timeLeft} />
       )}
@@ -153,7 +153,7 @@ export default function GameScreen({ mode, onExit }: Props) {
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0 }}
-            className="absolute inset-0 bg-red-950/90 flex flex-col items-center justify-center rounded-2xl gap-2 pointer-events-none z-10"
+            className="absolute inset-0 bg-red-950/90 flex flex-col items-center justify-center sm:rounded-2xl gap-2 pointer-events-none z-10"
           >
             <p className="text-5xl font-black text-red-300">TOO EARLY!</p>
             <p className="text-red-500 text-sm">Wait for the signal</p>
@@ -164,7 +164,7 @@ export default function GameScreen({ mode, onExit }: Props) {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="absolute inset-0 bg-green-950/80 flex items-center justify-center rounded-2xl pointer-events-none z-10"
+            className="absolute inset-0 bg-green-950/80 flex items-center justify-center sm:rounded-2xl pointer-events-none z-10"
           >
             <p className="text-5xl font-black text-green-300">DAB!</p>
           </motion.div>

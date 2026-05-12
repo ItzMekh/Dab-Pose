@@ -191,13 +191,7 @@ export default function CameraFeed({ gameState, onDabDetected, onFalseStart }: P
   const guideVisible = !(ready && poseDetected)
 
   return (
-    <>
-      {showLandscapeNudge && (
-        <div className="bg-yellow-900/80 text-yellow-200 text-xs text-center py-2 px-4 rounded-xl mb-2">
-          Rotate phone to landscape for best experience
-        </div>
-      )}
-      <div className="relative w-full aspect-video bg-black rounded-2xl overflow-hidden">
+    <div className="relative w-full h-full sm:aspect-video sm:h-auto bg-black sm:rounded-2xl overflow-hidden">
       <video
         ref={videoRef}
         autoPlay
@@ -247,6 +241,11 @@ export default function CameraFeed({ gameState, onDabDetected, onFalseStart }: P
         </span>
       </div>
 
+      {showLandscapeNudge && (
+        <div className="absolute top-0 inset-x-0 bg-yellow-900/80 text-yellow-200 text-xs text-center py-2 px-4 z-30">
+          Rotate phone to landscape for best experience
+        </div>
+      )}
       {fps !== null && fps < 15 && (
         <div className="absolute top-3 left-3 bg-yellow-900/80 text-yellow-300 text-xs px-2 py-1 rounded-lg font-mono">
           Low FPS: {fps} — detection may be inaccurate
@@ -258,6 +257,5 @@ export default function CameraFeed({ gameState, onDabDetected, onFalseStart }: P
         </div>
       )}
     </div>
-    </>
   )
 }
