@@ -38,12 +38,14 @@ export default function StreakResultScreen({ result, onRetry, onExit }: Props) {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (document.activeElement?.tagName === 'INPUT') return
-      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onRetry() }
+      if (e.key === 'Enter') { e.preventDefault(); if (!submitted) handleSubmit() }
+      if (e.key === ' ') { e.preventDefault(); onRetry() }
       if (e.key === 'Escape') onExit()
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [onRetry, onExit])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [onRetry, onExit, submitted])
 
   useEffect(() => {
     fetchLeaderboard('streak')
