@@ -28,9 +28,12 @@ export default function GameScreen({ mode, onExit }: Props) {
   const [timeLeft, setTimeLeft] = useState(30)
   const [streakBest, setStreakBest] = useState<number | null>(null)
   const [streakDone, setStreakDone] = useState(false)
+  const [showSwitchArm, setShowSwitchArm] = useState(false)
 
   const streakIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const streakStartedRef = useRef(false)
+  const lastDabArmRef = useRef<'left' | 'right' | null>(null)
+  const switchArmTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const dismissTutorial = useCallback(() => {
     localStorage.setItem('dab_seen_intro', '1')
@@ -64,22 +67,29 @@ export default function GameScreen({ mode, onExit }: Props) {
 
   // When streak timer hits 0, transition to result
   useEffect(() => {
-    if (streakDone) {
-      setGameState('result')
-    }
+    if (streakDone) setGameState('result')
   }, [streakDone])
 
-  // Cleanup interval on unmount
+  // Cleanup on unmount
   useEffect(() => {
     return () => {
-      if (streakIntervalRef.current) {
-        clearInterval(streakIntervalRef.current)
-      }
+      if (streakIntervalRef.current) clearInterval(streakIntervalRef.current)
+      if (switchArmTimerRef.current) clearTimeout(switchArmTimerRef.current)
     }
   }, [])
 
   const handleDabDetected = useCallback((res: GameResult) => {
     if (mode === 'streak') {
+      // Reject same-arm dab — require alternating arms
+      if (lastDabArmRef.current === res.dabArm) {
+        if (switchArmTimerRef.current) clearTimeout(switchArmTimerRef.current)
+        setShowSwitchArm(true)
+        switchArmTimerRef.current = setTimeout(() => setShowSwitchArm(false), 700)
+        go('detected')
+        setTimeout(() => go('signal'), 120)
+        return
+      }
+      lastDabArmRef.current = res.dabArm
       setStreakCount(c => c + 1)
       setStreakBest(prev => {
         if (prev === null) return res.time_ms
@@ -96,7 +106,6 @@ export default function GameScreen({ mode, onExit }: Props) {
 
   const handleFalseStart = useCallback(() => {
     if (mode === 'streak') {
-      // False start in streak: skip penalty, just go back to signal after 1s
       go('false_start')
       setTimeout(() => go('signal'), 1000)
     } else {
@@ -106,17 +115,18 @@ export default function GameScreen({ mode, onExit }: Props) {
   }, [go, mode])
 
   const handleRetry = useCallback(() => {
-    // Clear streak interval before resetting
     if (streakIntervalRef.current) {
       clearInterval(streakIntervalRef.current)
       streakIntervalRef.current = null
     }
     streakStartedRef.current = false
+    lastDabArmRef.current = null
     setResult(null)
     setStreakCount(0)
     setTimeLeft(30)
     setStreakBest(null)
     setStreakDone(false)
+    setShowSwitchArm(false)
     go('idle')
   }, [go])
 
@@ -161,8 +171,21 @@ export default function GameScreen({ mode, onExit }: Props) {
       </AnimatePresence>
 
       <AnimatePresence>
-        {gameState === 'false_start' && (
+        {showSwitchArm && (
           <motion.div
+            key="switch-arm"
+            initial={{ opacity: 0, scale: 0.85 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0 }}
+            className="absolute inset-0 bg-yellow-950/80 flex flex-col items-center justify-center pointer-events-none z-10"
+          >
+            <p className="text-5xl font-black text-yellow-300">SWITCH ARM!</p>
+            <p className="text-yellow-600 text-sm mt-1">Alternate left ↔ right</p>
+          </motion.div>
+        )}
+        {!showSwitchArm && gameState === 'false_start' && (
+          <motion.div
+            key="false-start"
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0 }}
@@ -172,8 +195,9 @@ export default function GameScreen({ mode, onExit }: Props) {
             <p className="text-red-500 text-sm">Wait for the signal</p>
           </motion.div>
         )}
-        {gameState === 'detected' && (
+        {gameState === 'detected' && !showSwitchArm && (
           <motion.div
+            key="detected"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
