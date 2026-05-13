@@ -2,7 +2,7 @@ import Link from 'next/link'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'Privacy Policy — Dab Pose',
+  title: 'Dab Pose — Privacy Policy',
   description: 'How Dab Pose handles your data.',
 }
 
@@ -17,7 +17,7 @@ export default function PrivacyPage() {
             href="/"
             className="inline-flex items-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-purple-500/40 text-white text-sm font-semibold px-4 py-2 rounded-xl transition-all duration-200"
           >
-            <span>←</span> Dab Pose
+            <span>←</span> Home
           </Link>
           <Link
             href="/terms"
@@ -101,14 +101,8 @@ export default function PrivacyPage() {
           </p>
         </section>
 
-        {/* Footer links */}
-        <div className="border-t border-white/10 pt-6 flex gap-3">
-          <Link
-            href="/"
-            className="inline-flex items-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-purple-500/40 text-white text-sm font-semibold px-4 py-2 rounded-xl transition-all duration-200"
-          >
-            ← Home
-          </Link>
+        {/* Footer */}
+        <div className="border-t border-white/10 pt-6 flex justify-center">
           <Link
             href="/terms"
             className="inline-flex items-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 text-gray-300 text-sm font-semibold px-4 py-2 rounded-xl transition-all duration-200"
