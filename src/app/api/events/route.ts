@@ -4,24 +4,16 @@ export const dynamic = 'force-dynamic'
 
 export async function GET() {
   const encoder = new TextEncoder()
-  let cleanup: (() => void) | null = null
+  let cleanupFn: (() => void) | null = null
 
   const stream = new ReadableStream({
     async start(controller) {
       let lastVersion = -1
       let closed = false
-      let intervalId: ReturnType<typeof setInterval>
-      let timeoutId: ReturnType<typeof setTimeout>
-
-      cleanup = () => {
-        clearInterval(intervalId)
-        clearTimeout(timeoutId)
-        if (!closed) { closed = true; controller.close() }
-      }
 
       controller.enqueue(encoder.encode(': connected\n\n'))
 
-      intervalId = setInterval(async () => {
+      const intervalId = setInterval(async () => {
         try {
           const raw = await redis.get('lb:stats:plays') as string | number | null
           const version = raw ? Number(raw) : 0
@@ -33,14 +25,20 @@ export async function GET() {
           }
         } catch (e) {
           console.error('[/api/events] Redis error:', e)
-          cleanup?.()
+          cleanupFn?.()
         }
       }, 5000)
 
-      timeoutId = setTimeout(() => cleanup?.(), 270_000)
+      const timeoutId = setTimeout(() => cleanupFn?.(), 270_000)
+
+      cleanupFn = () => {
+        clearInterval(intervalId)
+        clearTimeout(timeoutId)
+        if (!closed) { closed = true; controller.close() }
+      }
     },
     cancel() {
-      cleanup?.()
+      cleanupFn?.()
     },
   })
 
