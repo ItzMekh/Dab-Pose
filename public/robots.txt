@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://dab-pose.vercel.app/sitemap.xml

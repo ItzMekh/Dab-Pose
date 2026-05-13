@@ -3,27 +3,55 @@ import { redis, weekKey, todayKey } from '@/lib/redis'
 
 const MIN_MS = 100
 const MAX_MS = 30_000
+const MAX_COUNT = 300 // 30 s × 10 dabs/s — physically impossible to exceed
 const USERNAME_RE = /^[a-zA-Z0-9_\- ]{1,20}$/
 
 // TTL: week key lives 14 days, today key lives 2 days
 const WEEK_TTL = 14 * 24 * 3600
 const TODAY_TTL = 2 * 24 * 3600
 
+// --- In-memory rate limiter (IP-based, max 10 POST /api/score per minute) ---
+const RATE_WINDOW_MS = 60_000
+const RATE_MAX = 10
+const rateLimitMap = new Map<string, { count: number; resetAt: number }>()
+
+function isRateLimited(ip: string): boolean {
+  const now = Date.now()
+  const entry = rateLimitMap.get(ip)
+  if (!entry || now >= entry.resetAt) {
+    rateLimitMap.set(ip, { count: 1, resetAt: now + RATE_WINDOW_MS })
+    return false
+  }
+  if (entry.count >= RATE_MAX) return true
+  entry.count++
+  return false
+}
+
+const SECURITY_HEADERS = { 'X-Content-Type-Options': 'nosniff' } as const
+
 export async function POST(req: NextRequest) {
+  const ip =
+    req.headers.get('x-forwarded-for')?.split(',')[0].trim() ?? 'unknown'
+  if (isRateLimited(ip)) {
+    return NextResponse.json(
+      { error: 'Too many requests' },
+      { status: 429, headers: SECURITY_HEADERS }
+    )
+  }
   let body: unknown
   try {
     body = await req.json()
   } catch {
-    return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 })
+    return NextResponse.json({ error: 'Invalid JSON' }, { status: 400, headers: SECURITY_HEADERS })
   }
 
   const { username, time_ms, mode = 'single', count } = body as Record<string, unknown>
 
   if (typeof username !== 'string' || !USERNAME_RE.test(username.trim())) {
-    return NextResponse.json({ error: 'Invalid username' }, { status: 400 })
+    return NextResponse.json({ error: 'Invalid username' }, { status: 400, headers: SECURITY_HEADERS })
   }
   if (mode !== 'single' && mode !== 'streak') {
-    return NextResponse.json({ error: 'Invalid mode' }, { status: 400 })
+    return NextResponse.json({ error: 'Invalid mode' }, { status: 400, headers: SECURITY_HEADERS })
   }
 
   const now = new Date().toISOString()
@@ -31,8 +59,8 @@ export async function POST(req: NextRequest) {
   const user = (username as string).trim()
 
   if (mode === 'streak') {
-    if (typeof count !== 'number' || !Number.isInteger(count) || count < 0) {
-      return NextResponse.json({ error: 'Invalid count' }, { status: 400 })
+    if (typeof count !== 'number' || !Number.isInteger(count) || count < 0 || count > MAX_COUNT) {
+      return NextResponse.json({ error: 'Invalid count' }, { status: 400, headers: SECURITY_HEADERS })
     }
     const bestMs =
       typeof time_ms === 'number' && Number.isInteger(time_ms) && time_ms >= MIN_MS && time_ms <= MAX_MS
@@ -65,13 +93,13 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(
       { id, username: user, count, time_ms: bestMs, mode: 'streak', created_at: now, percentile, isKing },
-      { status: 201 }
+      { status: 201, headers: SECURITY_HEADERS }
     )
   }
 
   // single mode
   if (typeof time_ms !== 'number' || !Number.isInteger(time_ms) || time_ms < MIN_MS || time_ms > MAX_MS) {
-    return NextResponse.json({ error: 'Invalid time_ms' }, { status: 400 })
+    return NextResponse.json({ error: 'Invalid time_ms' }, { status: 400, headers: SECURITY_HEADERS })
   }
 
   const member = JSON.stringify({ id, username: user, time_ms, count: null, mode: 'single', created_at: now })
@@ -100,6 +128,6 @@ export async function POST(req: NextRequest) {
 
   return NextResponse.json(
     { id, username: user, time_ms, count: null, mode: 'single', created_at: now, percentile, isKing },
-    { status: 201 }
+    { status: 201, headers: SECURITY_HEADERS }
   )
 }
