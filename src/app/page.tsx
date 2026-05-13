@@ -9,7 +9,7 @@ import type { GameMode } from '@/types'
 
 const GameScreen = dynamic(() => import('@/components/game/GameScreen'), {
   loading: () => (
-    <div className="text-gray-400 text-sm animate-pulse">Loading game…</div>
+    <div className="text-gray-400 text-base animate-pulse">Loading game…</div>
   ),
   ssr: false,
 })

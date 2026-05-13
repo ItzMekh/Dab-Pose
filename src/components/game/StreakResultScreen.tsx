@@ -80,6 +80,7 @@ export default function StreakResultScreen({ result, onRetry, onExit }: Props) {
     <motion.div
       initial={{ opacity: 0, y: 32 }}
       animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.35 }}
       className="text-center space-y-5 p-4 sm:p-6 w-full max-w-sm mx-auto"
     >
       {/* NEW RECORD banner — pre-submit */}
@@ -172,7 +173,7 @@ export default function StreakResultScreen({ result, onRetry, onExit }: Props) {
               onChange={e => { setUsername(e.target.value); setValidationErr(null) }}
               onKeyDown={e => e.key === 'Enter' && handleSubmit()}
               maxLength={20}
-              className="flex-1 bg-white/8 border border-white/15 rounded-xl px-4 py-3 text-white placeholder-gray-600 outline-none focus:border-purple-500 transition-colors text-sm"
+              className="flex-1 bg-white/8 border border-white/15 rounded-xl px-4 py-3 text-white placeholder-gray-400 outline-none focus:border-purple-500 transition-colors text-sm"
             />
             <button
               onClick={handleSubmit}
@@ -198,13 +199,13 @@ export default function StreakResultScreen({ result, onRetry, onExit }: Props) {
       <div className="flex gap-3">
         <button
           onClick={onRetry}
-          className="flex-1 bg-white/8 hover:bg-white/15 text-white font-bold py-3 rounded-xl cursor-pointer transition-colors text-sm"
+          className="flex-1 bg-white/8 hover:bg-white/15 active:scale-95 text-white font-bold py-3 rounded-xl cursor-pointer transition-all text-sm"
         >
           Try Again
         </button>
         <a
           href="/leaderboard"
-          className="flex-1 bg-purple-950/60 hover:bg-purple-900/60 text-purple-300 font-bold py-3 rounded-xl text-center transition-colors text-sm"
+          className="flex-1 bg-purple-950/60 hover:bg-purple-900/60 active:scale-95 text-purple-300 font-bold py-3 rounded-xl text-center transition-all text-sm"
         >
           Leaderboard
         </a>

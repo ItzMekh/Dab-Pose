@@ -3,6 +3,8 @@
 import { motion } from 'framer-motion'
 
 const STEPS = [
+  { icon: '↔️', text: 'Stand 1.5–2 m from camera — full body in frame' },
+  { icon: '☀️', text: 'Face a light source — avoid sitting with a window behind you' },
   { icon: '📷', text: 'Allow camera access when prompted' },
   { icon: '🟢', text: 'Wait for the border to turn green' },
   { icon: '🙌', text: 'DAB as fast as you can!' },

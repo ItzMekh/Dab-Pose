@@ -65,7 +65,7 @@ export default function GameTimer({ gameState, onStateChange, mode }: Props) {
   }, [gameState, onStateChange, clearTimers, mode])
 
   const borderClass =
-    gameState === 'signal'  ? 'border-green-400 bg-transparent' :
+    gameState === 'signal' || gameState === 'detected' ? 'border-green-400 bg-transparent' :
     gameState === 'waiting' ? 'border-yellow-400/60 bg-transparent' :
     'border-purple-500/20 bg-transparent'
 
@@ -89,7 +89,7 @@ export default function GameTimer({ gameState, onStateChange, mode }: Props) {
             key={count}
             initial={{ scale: 1.8, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 0.6, opacity: 0 }}
+            exit={{ scale: 0.6, opacity: 0, transition: { duration: 0 } }}
             transition={{ duration: 0.2 }}
             className="text-8xl font-black text-white drop-shadow-2xl tabular-nums"
           >

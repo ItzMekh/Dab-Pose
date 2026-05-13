@@ -35,9 +35,10 @@ export default function GameScreen({ mode, onExit }: Props) {
   const lastDabArmRef = useRef<'left' | 'right' | null>(null)
   const switchArmTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const cameraResetRef = useRef<(() => void) | null>(null)
+  const streakCountRef = useRef(0)
 
-  // Floating +1 animations for streak mode
-  const [floatingDabs, setFloatingDabs] = useState<Array<{ id: number }>>([])
+  // Floating DAB! N animations for streak mode
+  const [floatingDabs, setFloatingDabs] = useState<Array<{ id: number; count: number }>>([])
   const floatingDabIdRef = useRef(0)
   const floatingDabTimersRef = useRef<Set<ReturnType<typeof setTimeout>>>(new Set())
 
@@ -104,14 +105,15 @@ export default function GameScreen({ mode, onExit }: Props) {
         return
       }
       lastDabArmRef.current = res.dabArm
-      setStreakCount(c => c + 1)
+      streakCountRef.current++
+      setStreakCount(streakCountRef.current)
       setStreakBest(prev => {
         if (prev === null) return res.time_ms
         return res.time_ms < prev ? res.time_ms : prev
       })
-      // Floating +1 animation
+      // Floating DAB! N animation
       const id = ++floatingDabIdRef.current
-      setFloatingDabs(prev => [...prev, { id }])
+      setFloatingDabs(prev => [...prev, { id, count: streakCountRef.current }])
       let tid: ReturnType<typeof setTimeout>
       tid = setTimeout(() => {
         setFloatingDabs(prev => prev.filter(d => d.id !== id))
@@ -144,6 +146,7 @@ export default function GameScreen({ mode, onExit }: Props) {
     }
     streakStartedRef.current = false
     lastDabArmRef.current = null
+    streakCountRef.current = 0
     setResult(null)
     setStreakCount(0)
     setTimeLeft(30)
@@ -195,7 +198,7 @@ export default function GameScreen({ mode, onExit }: Props) {
 
       <button
         onClick={onExit}
-        className="absolute top-3 right-3 z-20 text-gray-500 hover:text-white text-lg leading-none bg-black/40 rounded-full w-10 h-10 sm:w-8 sm:h-8 flex items-center justify-center cursor-pointer"
+        className="absolute top-3 right-3 z-20 text-gray-500 hover:text-white text-lg leading-none bg-black/40 rounded-full w-12 h-12 sm:w-10 sm:h-10 flex items-center justify-center cursor-pointer"
         aria-label="Exit game"
       >
         ✕
@@ -215,7 +218,9 @@ export default function GameScreen({ mode, onExit }: Props) {
             transition={{ duration: 0.85, ease: 'easeOut' }}
             className="absolute inset-0 flex items-center justify-center pointer-events-none z-20"
           >
-            <span className="text-7xl font-black text-green-300 drop-shadow-2xl select-none">+1</span>
+            <span className="text-5xl sm:text-7xl font-black text-green-300 drop-shadow-2xl select-none tabular-nums">
+              DAB! {d.count}
+            </span>
           </motion.div>
         ))}
       </AnimatePresence>
@@ -242,7 +247,7 @@ export default function GameScreen({ mode, onExit }: Props) {
             exit={{ opacity: 0 }}
             className="absolute inset-0 bg-red-950/90 flex flex-col items-center justify-center gap-2 pointer-events-none z-10"
           >
-            <p className="text-5xl font-black text-red-300">TOO EARLY!</p>
+            <p className="text-3xl sm:text-5xl font-black text-red-300">TOO EARLY!</p>
             <p className="text-red-500 text-sm">Wait for the signal</p>
           </motion.div>
         )}
@@ -254,7 +259,7 @@ export default function GameScreen({ mode, onExit }: Props) {
             exit={{ opacity: 0 }}
             className="absolute inset-0 bg-green-950/80 flex items-center justify-center pointer-events-none z-10"
           >
-            <p className="text-5xl font-black text-green-300">DAB!</p>
+            <p className="text-3xl sm:text-5xl font-black text-green-300">DAB!</p>
           </motion.div>
         )}
       </AnimatePresence>

@@ -5,10 +5,13 @@ import { motion, AnimatePresence } from 'framer-motion'
 import type { Score } from '@/types'
 
 type Tab = 'single' | 'streak'
+type Period = 'all' | 'week' | 'today'
 const PAGE = 10
+const PERIOD_LABELS: Record<Period, string> = { all: 'All Time', week: 'This Week', today: 'Today' }
 
 export default function Leaderboard() {
   const [tab, setTab] = useState<Tab>('single')
+  const [period, setPeriod] = useState<Period>('all')
   const [scores, setScores] = useState<Score[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(false)
@@ -19,11 +22,12 @@ export default function Leaderboard() {
     setLoading(true)
     setError(false)
     setVisible(PAGE)
-    fetch(`/api/leaderboard?mode=${tab}`)
+    const periodParam = period !== 'all' ? `&period=${period}` : ''
+    fetch(`/api/leaderboard?mode=${tab}${periodParam}`)
       .then(r => { if (!r.ok) throw new Error('fetch failed'); return r.json() })
       .then(data => { setScores(Array.isArray(data) ? data : []); setLoading(false) })
       .catch(() => { setError(true); setLoading(false) })
-  }, [tab, retry])
+  }, [tab, period, retry])
 
   const shown = scores.slice(0, visible)
   const hasMore = visible < scores.length
@@ -36,7 +40,7 @@ export default function Leaderboard() {
           <p className="text-gray-400">Fastest dabs worldwide</p>
         </div>
 
-        {/* Tab switcher */}
+        {/* Mode tabs */}
         <div className="flex gap-2 bg-white/5 border border-white/10 rounded-2xl p-1">
           {(['single', 'streak'] as Tab[]).map(t => (
             <button
@@ -49,6 +53,23 @@ export default function Leaderboard() {
               }`}
             >
               {t === 'single' ? '⚡ Reflex Dab' : '🔥 Dab Rush'}
+            </button>
+          ))}
+        </div>
+
+        {/* Period tabs */}
+        <div className="flex gap-1.5">
+          {(['all', 'week', 'today'] as Period[]).map(p => (
+            <button
+              key={p}
+              onClick={() => setPeriod(p)}
+              className={`flex-1 py-1.5 rounded-xl text-xs font-semibold cursor-pointer transition-all border ${
+                period === p
+                  ? 'bg-white/10 border-white/20 text-white'
+                  : 'border-transparent text-gray-500 hover:text-gray-300'
+              }`}
+            >
+              {PERIOD_LABELS[p]}
             </button>
           ))}
         </div>
@@ -70,7 +91,7 @@ export default function Leaderboard() {
                 <button onClick={() => setRetry(r => r + 1)} className="underline cursor-pointer">Retry</button>
               </div>
             ) : scores.length === 0 ? (
-              <div className="p-8 text-center text-gray-400">No scores yet. Be the first!</div>
+              <div className="min-h-[200px] flex items-center justify-center text-center text-gray-400">No scores yet. Be the first!</div>
             ) : (
               <table className="w-full">
                 <thead>
@@ -98,14 +119,14 @@ export default function Leaderboard() {
                       </td>
                       <td className="p-4 font-semibold">
                         {i === 0 ? (
-                          <span className="text-yellow-300">
-                            {score.username}
-                            <span className="ml-2 text-xs font-normal text-yellow-600 tracking-wide">
+                          <span className="text-yellow-300 flex items-center gap-2">
+                            <span className="max-w-[120px] sm:max-w-none truncate">{score.username}</span>
+                            <span className="text-xs font-normal text-yellow-600 tracking-wide shrink-0">
                               {tab === 'single' ? 'Reflex God' : 'Most Dabs'}
                             </span>
                           </span>
                         ) : (
-                          <span className="text-white">{score.username}</span>
+                          <span className="text-white max-w-[120px] sm:max-w-none truncate block">{score.username}</span>
                         )}
                       </td>
                       <td className="p-4 text-center font-mono text-purple-300 font-bold">
