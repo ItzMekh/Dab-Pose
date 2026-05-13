@@ -14,12 +14,17 @@ export async function GET(req: NextRequest) {
     key = `lb:${mode}:all`
   }
 
-  // single: ascending (lowest time_ms = rank #1)
-  // streak: descending (highest count = rank #1)
-  const raw = await redis.zrange(key, 0, 99, mode === 'streak' ? { rev: true } : {}) as string[]
-  const data = raw.map(m => JSON.parse(m))
+  try {
+    // single: ascending (lowest time_ms = rank #1)
+    // streak: descending (highest count = rank #1)
+    const raw = await redis.zrange(key, 0, 99, mode === 'streak' ? { rev: true } : {}) as string[]
+    const data = raw.map(m => (typeof m === 'string' ? JSON.parse(m) : m))
 
-  return NextResponse.json(data, {
-    headers: { 'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=60' },
-  })
+    return NextResponse.json(data, {
+      headers: { 'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=60' },
+    })
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e)
+    return NextResponse.json({ error: msg }, { status: 500 })
+  }
 }
