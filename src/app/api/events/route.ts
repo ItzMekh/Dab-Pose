@@ -27,7 +27,7 @@ export async function GET() {
           console.error('[/api/events] Redis error:', e)
           cleanupFn?.()
         }
-      }, 5000)
+      }, 2000)
 
       const timeoutId = setTimeout(() => cleanupFn?.(), 270_000)
 
