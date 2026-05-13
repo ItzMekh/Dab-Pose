@@ -4,6 +4,7 @@ export const dynamic = 'force-dynamic'
 
 export async function GET() {
   const encoder = new TextEncoder()
+  let cleanup: (() => void) | null = null
 
   const stream = new ReadableStream({
     async start(controller) {
@@ -12,13 +13,12 @@ export async function GET() {
       let intervalId: ReturnType<typeof setInterval>
       let timeoutId: ReturnType<typeof setTimeout>
 
-      const cleanup = () => {
+      cleanup = () => {
         clearInterval(intervalId)
         clearTimeout(timeoutId)
         if (!closed) { closed = true; controller.close() }
       }
 
-      // Confirm connection immediately
       controller.enqueue(encoder.encode(': connected\n\n'))
 
       intervalId = setInterval(async () => {
@@ -31,13 +31,16 @@ export async function GET() {
           } else {
             controller.enqueue(encoder.encode(': ping\n\n'))
           }
-        } catch {
-          cleanup()
+        } catch (e) {
+          console.error('[/api/events] Redis error:', e)
+          cleanup?.()
         }
       }, 5000)
 
-      // Close before Vercel's 300 s function timeout so EventSource reconnects cleanly
-      timeoutId = setTimeout(cleanup, 270_000)
+      timeoutId = setTimeout(() => cleanup?.(), 270_000)
+    },
+    cancel() {
+      cleanup?.()
     },
   })
 
