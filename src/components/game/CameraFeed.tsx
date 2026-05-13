@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useCallback, useState } from 'react'
+import React, { useEffect, useRef, useCallback, useState } from 'react'
 import type { GameState } from '@/types'
 import { useCamera } from '@/hooks/useCamera'
 import { useFPS } from '@/hooks/useFPS'
@@ -12,12 +12,13 @@ interface Props {
   gameState: GameState
   onDabDetected: (result: GameResult) => void
   onFalseStart: () => void
+  resetDetectorRef?: React.MutableRefObject<(() => void) | null>
 }
 
 // Pose landmark indices to draw
 const LANDMARK_INDICES = [0, 11, 12, 13, 14, 15, 16] // nose, shoulders, elbows, wrists
 
-export default function CameraFeed({ gameState, onDabDetected, onFalseStart }: Props) {
+export default function CameraFeed({ gameState, onDabDetected, onFalseStart, resetDetectorRef }: Props) {
   const { stream, error, ready } = useCamera()
   const fps = useFPS()
 
@@ -58,6 +59,12 @@ export default function CameraFeed({ gameState, onDabDetected, onFalseStart }: P
       videoRef.current.srcObject = stream
     }
   }, [stream])
+
+  useEffect(() => {
+    if (!resetDetectorRef) return
+    resetDetectorRef.current = () => detectorRef.current.reset()
+    return () => { resetDetectorRef.current = null }
+  }, [resetDetectorRef])
 
   // Track signal time
   useEffect(() => {

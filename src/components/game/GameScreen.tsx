@@ -34,6 +34,20 @@ export default function GameScreen({ mode, onExit }: Props) {
   const streakStartedRef = useRef(false)
   const lastDabArmRef = useRef<'left' | 'right' | null>(null)
   const switchArmTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const cameraResetRef = useRef<(() => void) | null>(null)
+
+  // Floating +1 animations for streak mode
+  const [floatingDabs, setFloatingDabs] = useState<Array<{ id: number }>>([])
+  const floatingDabIdRef = useRef(0)
+  const floatingDabTimersRef = useRef<Set<ReturnType<typeof setTimeout>>>(new Set())
+
+  // ESC exits game — disabled during result (result screens handle it themselves)
+  useEffect(() => {
+    if (gameState === 'result') return
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onExit() }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [onExit, gameState])
 
   const dismissTutorial = useCallback(() => {
     localStorage.setItem('dab_seen_intro', '1')
@@ -75,18 +89,18 @@ export default function GameScreen({ mode, onExit }: Props) {
     return () => {
       if (streakIntervalRef.current) clearInterval(streakIntervalRef.current)
       if (switchArmTimerRef.current) clearTimeout(switchArmTimerRef.current)
+      floatingDabTimersRef.current.forEach(t => clearTimeout(t))
     }
   }, [])
 
   const handleDabDetected = useCallback((res: GameResult) => {
     if (mode === 'streak') {
-      // Reject same-arm dab — require alternating arms
+      // Reject same-arm dab — reset detector, show banner, stay in signal (no flash)
       if (lastDabArmRef.current === res.dabArm) {
         if (switchArmTimerRef.current) clearTimeout(switchArmTimerRef.current)
         setShowSwitchArm(true)
         switchArmTimerRef.current = setTimeout(() => setShowSwitchArm(false), 700)
-        go('detected')
-        setTimeout(() => go('signal'), 120)
+        cameraResetRef.current?.()
         return
       }
       lastDabArmRef.current = res.dabArm
@@ -95,6 +109,15 @@ export default function GameScreen({ mode, onExit }: Props) {
         if (prev === null) return res.time_ms
         return res.time_ms < prev ? res.time_ms : prev
       })
+      // Floating +1 animation
+      const id = ++floatingDabIdRef.current
+      setFloatingDabs(prev => [...prev, { id }])
+      let tid: ReturnType<typeof setTimeout>
+      tid = setTimeout(() => {
+        setFloatingDabs(prev => prev.filter(d => d.id !== id))
+        floatingDabTimersRef.current.delete(tid)
+      }, 850)
+      floatingDabTimersRef.current.add(tid)
       go('detected')
       setTimeout(() => go('signal'), 120)
     } else {
@@ -127,6 +150,9 @@ export default function GameScreen({ mode, onExit }: Props) {
     setStreakBest(null)
     setStreakDone(false)
     setShowSwitchArm(false)
+    floatingDabTimersRef.current.forEach(t => clearTimeout(t))
+    floatingDabTimersRef.current.clear()
+    setFloatingDabs([])
     go('idle')
   }, [go])
 
@@ -163,6 +189,7 @@ export default function GameScreen({ mode, onExit }: Props) {
         gameState={gameState}
         onDabDetected={handleDabDetected}
         onFalseStart={handleFalseStart}
+        resetDetectorRef={cameraResetRef}
       />
       {!showTutorial && <GameTimer gameState={gameState} onStateChange={go} mode={mode} />}
 
@@ -176,6 +203,21 @@ export default function GameScreen({ mode, onExit }: Props) {
 
       <AnimatePresence>
         {showTutorial && <TutorialOverlay onDismiss={dismissTutorial} />}
+      </AnimatePresence>
+
+      {/* Floating +1 for streak mode */}
+      <AnimatePresence>
+        {floatingDabs.map(d => (
+          <motion.div
+            key={d.id}
+            initial={{ opacity: 1, y: 0, scale: 1 }}
+            animate={{ opacity: 0, y: -120, scale: 1.4 }}
+            transition={{ duration: 0.85, ease: 'easeOut' }}
+            className="absolute inset-0 flex items-center justify-center pointer-events-none z-20"
+          >
+            <span className="text-7xl font-black text-green-300 drop-shadow-2xl select-none">+1</span>
+          </motion.div>
+        ))}
       </AnimatePresence>
 
       <AnimatePresence>

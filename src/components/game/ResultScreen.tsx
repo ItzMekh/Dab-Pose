@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import type { GameResult } from '@/types'
 import { submitScore, validateUsername, fetchLeaderboard } from '@/lib/api'
 import { useUsername } from '@/hooks/useUsername'
+import { useStableKeyboardShortcuts } from '@/hooks/useStableKeyboardShortcuts'
 
 interface Props {
   result: GameResult
@@ -41,18 +42,6 @@ export default function ResultScreen({ result, onRetry, onExit }: Props) {
   const rating = getRating(result.time_ms)
 
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (document.activeElement?.tagName === 'INPUT') return
-      if (e.key === 'Enter') { e.preventDefault(); if (!submitted) handleSubmit() }
-      if (e.key === ' ') { e.preventDefault(); onRetry() }
-      if (e.key === 'Escape') onExit()
-    }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [onRetry, onExit, submitted])
-
-  useEffect(() => {
     fetchLeaderboard('single')
       .then(scores => {
         const faster = scores.filter(s => s.time_ms !== null && s.time_ms < result.time_ms).length
@@ -80,6 +69,12 @@ export default function ResultScreen({ result, onRetry, onExit }: Props) {
       setSubmitErr(res.error ?? 'Failed to save score')
     }
   }
+
+  useStableKeyboardShortcuts({
+    Enter: () => { if (!submitted) handleSubmit() },
+    Space: onRetry,
+    Escape: onExit,
+  })
 
   return (
     <motion.div

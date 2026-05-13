@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import type { StreakResult } from '@/types'
 import { submitScore, validateUsername, fetchLeaderboard } from '@/lib/api'
 import { useUsername } from '@/hooks/useUsername'
+import { useStableKeyboardShortcuts } from '@/hooks/useStableKeyboardShortcuts'
 
 interface Props {
   result: StreakResult
@@ -34,18 +35,6 @@ export default function StreakResultScreen({ result, onRetry, onExit }: Props) {
   const [isNewRecord, setIsNewRecord] = useState(false)
 
   const rating = getRating(result.count)
-
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (document.activeElement?.tagName === 'INPUT') return
-      if (e.key === 'Enter') { e.preventDefault(); if (!submitted) handleSubmit() }
-      if (e.key === ' ') { e.preventDefault(); onRetry() }
-      if (e.key === 'Escape') onExit()
-    }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [onRetry, onExit, submitted])
 
   useEffect(() => {
     fetchLeaderboard('streak')
@@ -80,6 +69,12 @@ export default function StreakResultScreen({ result, onRetry, onExit }: Props) {
       setSubmitErr(res.error ?? 'Failed to save score')
     }
   }
+
+  useStableKeyboardShortcuts({
+    Enter: () => { if (!submitted) handleSubmit() },
+    Space: onRetry,
+    Escape: onExit,
+  })
 
   return (
     <motion.div
