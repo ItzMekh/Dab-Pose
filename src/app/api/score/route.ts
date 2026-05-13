@@ -1,9 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase'
+import { redis, weekKey, todayKey } from '@/lib/redis'
 
 const MIN_MS = 100
 const MAX_MS = 30_000
 const USERNAME_RE = /^[a-zA-Z0-9_\- ]{1,20}$/
+
+// TTL: week key lives 14 days, today key lives 2 days
+const WEEK_TTL = 14 * 24 * 3600
+const TODAY_TTL = 2 * 24 * 3600
 
 export async function POST(req: NextRequest) {
   let body: unknown
@@ -22,33 +26,47 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid mode' }, { status: 400 })
   }
 
-  const supabase = createClient()
+  const now = new Date().toISOString()
+  const id = crypto.randomUUID()
+  const user = (username as string).trim()
 
   if (mode === 'streak') {
     if (typeof count !== 'number' || !Number.isInteger(count) || count < 0) {
       return NextResponse.json({ error: 'Invalid count' }, { status: 400 })
     }
-    const bestMs = typeof time_ms === 'number' && Number.isInteger(time_ms) && time_ms >= MIN_MS && time_ms <= MAX_MS
-      ? time_ms : null
+    const bestMs =
+      typeof time_ms === 'number' && Number.isInteger(time_ms) && time_ms >= MIN_MS && time_ms <= MAX_MS
+        ? time_ms
+        : null
 
-    const { data, error } = await supabase
-      .from('scores')
-      .insert({ username: username.trim(), mode: 'streak', count, time_ms: bestMs })
-      .select('id, username, count, time_ms, mode, created_at')
-      .single()
+    const member = JSON.stringify({ id, username: user, count, time_ms: bestMs, mode: 'streak', created_at: now })
+    const allKey = 'lb:streak:all'
+    const wKey = `lb:streak:week:${weekKey()}`
+    const tKey = `lb:streak:today:${todayKey()}`
 
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    const p = redis.pipeline()
+    p.zadd(allKey, { score: count, member })
+    p.zadd(wKey, { score: count, member })
+    p.zadd(tKey, { score: count, member })
+    p.expire(wKey, WEEK_TTL)
+    p.expire(tKey, TODAY_TTL)
+    await p.exec()
 
-    const [{ count: betterCount }, { count: totalCount }] = await Promise.all([
-      supabase.from('scores').select('*', { count: 'exact', head: true }).eq('mode', 'streak').gt('count', count),
-      supabase.from('scores').select('*', { count: 'exact', head: true }).eq('mode', 'streak'),
+    const [betterCount, totalCount, rank] = await Promise.all([
+      redis.zcount(allKey, count + 1, '+inf'),
+      redis.zcard(allKey),
+      redis.zrevrank(allKey, member),
     ])
-    const total = totalCount ?? 1
-    const better = betterCount ?? 0
-    const percentile = Math.round(((total - better) / total) * 100)
-    const isKing = better === 0
 
-    return NextResponse.json({ ...data, percentile, isKing }, { status: 201 })
+    const total = (totalCount as number) ?? 1
+    const better = (betterCount as number) ?? 0
+    const percentile = Math.round(((total - better) / total) * 100)
+    const isKing = rank === 0
+
+    return NextResponse.json(
+      { id, username: user, count, time_ms: bestMs, mode: 'streak', created_at: now, percentile, isKing },
+      { status: 201 }
+    )
   }
 
   // single mode
@@ -56,22 +74,32 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid time_ms' }, { status: 400 })
   }
 
-  const { data, error } = await supabase
-    .from('scores')
-    .insert({ username: username.trim(), mode: 'single', time_ms })
-    .select('id, username, time_ms, mode, created_at')
-    .single()
+  const member = JSON.stringify({ id, username: user, time_ms, count: null, mode: 'single', created_at: now })
+  const allKey = 'lb:single:all'
+  const wKey = `lb:single:week:${weekKey()}`
+  const tKey = `lb:single:today:${todayKey()}`
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  const p = redis.pipeline()
+  p.zadd(allKey, { score: time_ms, member })
+  p.zadd(wKey, { score: time_ms, member })
+  p.zadd(tKey, { score: time_ms, member })
+  p.expire(wKey, WEEK_TTL)
+  p.expire(tKey, TODAY_TTL)
+  await p.exec()
 
-  const [{ count: betterCount }, { count: totalCount }] = await Promise.all([
-    supabase.from('scores').select('*', { count: 'exact', head: true }).eq('mode', 'single').lt('time_ms', time_ms),
-    supabase.from('scores').select('*', { count: 'exact', head: true }).eq('mode', 'single'),
+  const [betterCount, totalCount, rank] = await Promise.all([
+    redis.zcount(allKey, '-inf', time_ms - 1),
+    redis.zcard(allKey),
+    redis.zrank(allKey, member),
   ])
-  const total = totalCount ?? 1
-  const better = betterCount ?? 0
-  const percentile = Math.round(((total - better) / total) * 100)
-  const isKing = better === 0
 
-  return NextResponse.json({ ...data, percentile, isKing }, { status: 201 })
+  const total = (totalCount as number) ?? 1
+  const better = (betterCount as number) ?? 0
+  const percentile = Math.round(((total - better) / total) * 100)
+  const isKing = rank === 0
+
+  return NextResponse.json(
+    { id, username: user, time_ms, count: null, mode: 'single', created_at: now, percentile, isKing },
+    { status: 201 }
+  )
 }

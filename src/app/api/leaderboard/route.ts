@@ -1,31 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase'
+import { redis, weekKey, todayKey } from '@/lib/redis'
 
 export async function GET(req: NextRequest) {
   const mode = req.nextUrl.searchParams.get('mode') === 'streak' ? 'streak' : 'single'
-  const period = req.nextUrl.searchParams.get('period') // 'week' | 'today' | null = all time
-  const supabase = createClient()
+  const period = req.nextUrl.searchParams.get('period')
 
-  let q = supabase
-    .from('scores')
-    .select('id, username, time_ms, count, mode, created_at')
-    .eq('mode', mode)
-    .limit(100)
-
+  let key: string
   if (period === 'week') {
-    const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
-    q = q.gte('created_at', weekAgo)
+    key = `lb:${mode}:week:${weekKey()}`
   } else if (period === 'today') {
-    const todayStart = new Date()
-    todayStart.setHours(0, 0, 0, 0)
-    q = q.gte('created_at', todayStart.toISOString())
+    key = `lb:${mode}:today:${todayKey()}`
+  } else {
+    key = `lb:${mode}:all`
   }
 
-  const { data, error } = mode === 'streak'
-    ? await q.order('count', { ascending: false })
-    : await q.order('time_ms', { ascending: true })
+  // single: ascending (lowest time_ms = rank #1)
+  // streak: descending (highest count = rank #1)
+  const raw = await redis.zrange(key, 0, 99, mode === 'streak' ? { rev: true } : {}) as string[]
+  const data = raw.map(m => JSON.parse(m))
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   return NextResponse.json(data, {
     headers: { 'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=60' },
   })
