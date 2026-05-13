@@ -63,3 +63,4 @@ docs/
 *.jpeg
 !public/favicon.png
 !public/og.png
+!public/title-web.png

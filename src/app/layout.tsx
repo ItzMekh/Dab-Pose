@@ -13,7 +13,7 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   title: 'Dab Pose — How Fast Can You Dab?',
   description: 'Test your dab reaction speed with real-time pose detection.',
-  icons: { icon: '/favicon.png', shortcut: '/favicon.png' },
+  icons: { icon: '/title-web.png', shortcut: '/title-web.png' },
   manifest: '/manifest.json',
   openGraph: {
     title: 'Dab Pose — How Fast Can You Dab?',
