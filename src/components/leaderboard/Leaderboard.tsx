@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
 import type { Score } from '@/types'
 
@@ -166,14 +167,14 @@ export default function Leaderboard() {
 
       {/* Floating Play Now */}
       <div className="fixed bottom-0 left-0 right-0 p-4 flex justify-center pointer-events-none">
-        <a
+        <Link
           href="/"
           className="pointer-events-auto group flex items-center justify-center gap-3 w-full max-w-lg bg-gradient-to-r from-purple-600 to-purple-500 hover:from-purple-500 hover:to-purple-400 text-white font-black text-lg py-4 rounded-2xl transition-all duration-200 shadow-2xl shadow-purple-900/60 hover:shadow-purple-700/60 hover:scale-[1.02] active:scale-[0.98] backdrop-blur-sm"
         >
           <span className="text-2xl group-hover:animate-bounce">🙌</span>
           Play Now
           <span className="text-purple-300 font-normal text-sm">→</span>
-        </a>
+        </Link>
       </div>
     </div>
   )

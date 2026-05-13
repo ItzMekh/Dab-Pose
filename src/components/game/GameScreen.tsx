@@ -116,8 +116,7 @@ export default function GameScreen({ mode, onExit }: Props) {
       // Floating DAB! N animation
       const id = ++floatingDabIdRef.current
       setFloatingDabs(prev => [...prev, { id, count: streakCountRef.current }])
-      let tid: ReturnType<typeof setTimeout>
-      tid = setTimeout(() => {
+      const tid = setTimeout(() => {
         setFloatingDabs(prev => prev.filter(d => d.id !== id))
         floatingDabTimersRef.current.delete(tid)
       }, 850)
