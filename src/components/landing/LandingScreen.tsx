@@ -1,10 +1,11 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { motion } from 'framer-motion'
 import { Zap, Flame } from 'lucide-react'
 import Link from 'next/link'
 import type { GameMode } from '@/types'
+import { useRealtimeVersion } from '@/hooks/useRealtimeVersion'
 
 interface Props {
   onStart: (mode: GameMode) => void
@@ -40,13 +41,21 @@ function formatPlays(n: number): string {
 export default function LandingScreen({ onStart }: Props) {
   const [selectedMode, setSelectedMode] = useState<GameMode>('single')
   const [totalPlays, setTotalPlays] = useState<number | null>(null)
+  const statsRef = useRef<(() => void) | null>(null)
 
   useEffect(() => {
-    fetch('/api/stats')
-      .then(r => r.ok ? r.json() : null)
-      .then(d => { if (d && typeof d.totalPlays === 'number') setTotalPlays(d.totalPlays) })
-      .catch(() => {})
+    const doFetch = () =>
+      fetch('/api/stats', { cache: 'no-store' })
+        .then(r => r.ok ? r.json() : null)
+        .then(d => { if (d && typeof d.totalPlays === 'number') setTotalPlays(d.totalPlays) })
+        .catch(() => {})
+    statsRef.current = doFetch
+    doFetch()
+    const id = setInterval(doFetch, 30_000)
+    return () => clearInterval(id)
   }, [])
+
+  useRealtimeVersion(() => statsRef.current?.())
 
   return (
     <div className="text-center space-y-10 p-4 sm:p-8">
