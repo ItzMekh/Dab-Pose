@@ -26,6 +26,17 @@ function getRating(ms: number) {
   return RATINGS.find(r => ms < r.max) ?? RATINGS[RATINGS.length - 1]
 }
 
+function formatTimeDisplay(ms: number): { primary: string; unit: string } {
+  if (ms < 1000) return { primary: ms.toString(), unit: 'ms' }
+  if (ms < 60000) return { primary: (ms / 1000).toFixed(3), unit: 's' }
+  if (ms < 3600000) {
+    const m = Math.floor(ms / 60000)
+    const s = String(Math.floor((ms % 60000) / 1000)).padStart(2, '0')
+    return { primary: `${m}:${s}`, unit: 'min' }
+  }
+  return { primary: (ms / 3600000).toFixed(2), unit: 'hr' }
+}
+
 export default function ResultScreen({ result, onRetry, onExit }: Props) {
   const { username, setUsername, saveUsername } = useUsername()
   const [validationErr, setValidationErr] = useState<string | null>(null)
@@ -40,6 +51,7 @@ export default function ResultScreen({ result, onRetry, onExit }: Props) {
   const [isNewRecord, setIsNewRecord] = useState(false)
 
   const rating = getRating(result.time_ms)
+  const timeDisplay = formatTimeDisplay(result.time_ms)
 
   useEffect(() => {
     fetchLeaderboard('single')
@@ -126,11 +138,15 @@ export default function ResultScreen({ result, onRetry, onExit }: Props) {
       <div className="bg-white/5 border border-white/10 backdrop-blur-xl rounded-3xl p-7 space-y-3">
         <p className={`text-2xl font-black tracking-wide ${rating.color}`}>{rating.label}</p>
         <p className="text-5xl sm:text-6xl font-black text-white tabular-nums">
-          {result.time_ms}
-          <span className="text-xl text-gray-500 ml-2 font-normal">ms</span>
+          {timeDisplay.primary}
+          <span className="text-xl text-gray-500 ml-2 font-normal">{timeDisplay.unit}</span>
         </p>
         <p className="text-gray-500 text-sm">
-          {result.dabArm === 'left' ? 'Left' : 'Right'} arm · {(result.time_ms / 1000).toFixed(3)}s
+          {result.dabArm === 'left' ? 'Left' : 'Right'} arm
+          {timeDisplay.unit === 'ms'
+            ? <> · {(result.time_ms / 1000).toFixed(3)}s</>
+            : <> · {result.time_ms} ms</>
+          }
         </p>
 
         {/* Rank badge — switches from preview to percentile after submit */}
@@ -207,7 +223,7 @@ export default function ResultScreen({ result, onRetry, onExit }: Props) {
           onClick={onRetry}
           className="flex-1 bg-white/8 hover:bg-white/15 active:scale-95 text-white font-bold py-3 rounded-xl cursor-pointer transition-all text-sm"
         >
-          Try Again
+          🔄 Try Again
         </button>
         <a
           href="/leaderboard"

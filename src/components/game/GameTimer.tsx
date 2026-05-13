@@ -8,9 +8,10 @@ interface Props {
   gameState: GameState
   onStateChange: (state: GameState) => void
   mode: GameMode
+  armRaised?: boolean
 }
 
-export default function GameTimer({ gameState, onStateChange, mode }: Props) {
+export default function GameTimer({ gameState, onStateChange, mode, armRaised }: Props) {
   const [count, setCount] = useState(3)
   const [showGo, setShowGo] = useState(false)
   const t1 = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -53,16 +54,24 @@ export default function GameTimer({ gameState, onStateChange, mode }: Props) {
     }
 
     if (gameState === 'waiting') {
+      // If arm is raised: cancel any running timer and wait for arm to lower
+      if (armRaised) {
+        clearTimers()
+        return
+      }
       setShowGo(false)
-      const delay = Math.random() * 2000 + 1000
-      t2.current = setTimeout(() => {
-        setShowGo(true)
-        onStateChange('signal')
-        t3.current = setTimeout(() => setShowGo(false), 400)
-      }, delay)
+      // Small buffer after arm lowers so player can't instantly cheat
+      t1.current = setTimeout(() => {
+        const delay = Math.random() * 2000 + 1000
+        t2.current = setTimeout(() => {
+          setShowGo(true)
+          onStateChange('signal')
+          t3.current = setTimeout(() => setShowGo(false), 400)
+        }, delay)
+      }, 400)
       return clearTimers
     }
-  }, [gameState, onStateChange, clearTimers, mode])
+  }, [gameState, onStateChange, clearTimers, mode, armRaised])
 
   const borderClass =
     gameState === 'signal' || gameState === 'detected' ? 'border-green-400 bg-transparent' :

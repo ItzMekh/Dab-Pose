@@ -52,8 +52,10 @@ function rawDetect(landmarks: NormalizedLandmarkList): DabResult {
     lRaised && lAngle > STRAIGHT_ELBOW_MIN &&
     rAngle < BENT_ELBOW_MAX && rFaceDist < FACE_DISTANCE_MAX
 
-  if (leftDab) return { isDab: true, dabArm: 'left' }
-  if (rightDab) return { isDab: true, dabArm: 'right' }
+  // leftDab = right arm raised straight, left arm bent near face → dabbing arm is right
+  // rightDab = left arm raised straight, right arm bent near face → dabbing arm is left
+  if (leftDab) return { isDab: true, dabArm: 'right' }
+  if (rightDab) return { isDab: true, dabArm: 'left' }
   return { isDab: false, dabArm: null }
 }
 

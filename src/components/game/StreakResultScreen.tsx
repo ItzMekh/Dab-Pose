@@ -201,7 +201,7 @@ export default function StreakResultScreen({ result, onRetry, onExit }: Props) {
           onClick={onRetry}
           className="flex-1 bg-white/8 hover:bg-white/15 active:scale-95 text-white font-bold py-3 rounded-xl cursor-pointer transition-all text-sm"
         >
-          Try Again
+          🔄 Try Again
         </button>
         <a
           href="/leaderboard"

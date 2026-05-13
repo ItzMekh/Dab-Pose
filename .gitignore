@@ -54,6 +54,7 @@ SKILL.md
 docs/
 .obsidian/
 .playwright-mcp/
+.claude/
 *.png
 *.jpg
 *.jpeg

@@ -13,12 +13,13 @@ interface Props {
   onDabDetected: (result: GameResult) => void
   onFalseStart: () => void
   resetDetectorRef?: React.MutableRefObject<(() => void) | null>
+  onArmRaised?: (raised: boolean) => void
 }
 
 // Pose landmark indices to draw
 const LANDMARK_INDICES = [0, 11, 12, 13, 14, 15, 16] // nose, shoulders, elbows, wrists
 
-export default function CameraFeed({ gameState, onDabDetected, onFalseStart, resetDetectorRef }: Props) {
+export default function CameraFeed({ gameState, onDabDetected, onFalseStart, resetDetectorRef, onArmRaised }: Props) {
   const { stream, error, ready } = useCamera()
   const fps = useFPS()
 
@@ -49,6 +50,10 @@ export default function CameraFeed({ gameState, onDabDetected, onFalseStart, res
   const rafIdRef = useRef<number>(0)
   // Track poseDetected in ref so onResults closure can read it without re-creating
   const poseDetectedRef = useRef(false)
+  // Track arm-raised state to avoid redundant callbacks
+  const armRaisedRef = useRef(false)
+  const onArmRaisedRef = useRef(onArmRaised)
+  onArmRaisedRef.current = onArmRaised
 
   // Keep ref in sync without triggering effect re-runs
   gameStateRef.current = gameState
@@ -74,6 +79,11 @@ export default function CameraFeed({ gameState, onDabDetected, onFalseStart, res
     }
     if (gameState === 'idle') {
       detectorRef.current.reset()
+    }
+    // Clear arm-raised when leaving waiting state
+    if (gameState !== 'waiting' && armRaisedRef.current) {
+      armRaisedRef.current = false
+      onArmRaisedRef.current?.(false)
     }
   }, [gameState])
 
@@ -138,6 +148,25 @@ export default function CameraFeed({ gameState, onDabDetected, onFalseStart, res
         if (!results.poseLandmarks) return
 
         const state = gameStateRef.current
+
+        // Arm-raised check: during waiting, notify if any wrist is above nose (y=0 is top)
+        if (onArmRaisedRef.current) {
+          const lms = results.poseLandmarks
+          const nose = lms[0]
+          const leftWrist = lms[15]
+          const rightWrist = lms[16]
+          if (nose && (leftWrist || rightWrist)) {
+            const raised = state === 'waiting' && (
+              (leftWrist && (leftWrist.visibility ?? 0) > 0.5 && leftWrist.y < nose.y) ||
+              (rightWrist && (rightWrist.visibility ?? 0) > 0.5 && rightWrist.y < nose.y)
+            )
+            if (raised !== armRaisedRef.current) {
+              armRaisedRef.current = raised
+              onArmRaisedRef.current(raised)
+            }
+          }
+        }
+
         if (state !== 'signal' && state !== 'waiting') return
 
         const { confirmed, dabArm } = detectorRef.current.process(results.poseLandmarks)

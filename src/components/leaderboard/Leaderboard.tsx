@@ -58,15 +58,15 @@ export default function Leaderboard() {
         </div>
 
         {/* Period tabs */}
-        <div className="flex gap-1.5">
+        <div className="flex gap-1 bg-white/5 border border-white/10 rounded-xl p-1">
           {(['all', 'week', 'today'] as Period[]).map(p => (
             <button
               key={p}
               onClick={() => setPeriod(p)}
-              className={`flex-1 py-1.5 rounded-xl text-xs font-semibold cursor-pointer transition-all border ${
+              className={`flex-1 py-1.5 rounded-lg text-xs font-semibold cursor-pointer transition-all ${
                 period === p
-                  ? 'bg-white/10 border-white/20 text-white'
-                  : 'border-transparent text-gray-500 hover:text-gray-300'
+                  ? 'bg-white/15 text-white'
+                  : 'text-gray-500 hover:text-gray-300'
               }`}
             >
               {PERIOD_LABELS[p]}

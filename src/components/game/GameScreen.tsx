@@ -30,6 +30,8 @@ export default function GameScreen({ mode, onExit }: Props) {
   const [streakDone, setStreakDone] = useState(false)
   const [showSwitchArm, setShowSwitchArm] = useState(false)
 
+  const [armRaised, setArmRaised] = useState(false)
+
   const streakIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const streakStartedRef = useRef(false)
   const lastDabArmRef = useRef<'left' | 'right' | null>(null)
@@ -193,8 +195,9 @@ export default function GameScreen({ mode, onExit }: Props) {
         onDabDetected={handleDabDetected}
         onFalseStart={handleFalseStart}
         resetDetectorRef={cameraResetRef}
+        onArmRaised={mode === 'single' ? setArmRaised : undefined}
       />
-      {!showTutorial && <GameTimer gameState={gameState} onStateChange={go} mode={mode} />}
+      {!showTutorial && <GameTimer gameState={gameState} onStateChange={go} mode={mode} armRaised={mode === 'single' ? armRaised : undefined} />}
 
       <button
         onClick={onExit}
@@ -236,6 +239,19 @@ export default function GameScreen({ mode, onExit }: Props) {
           >
             <div className="bg-yellow-400/20 border border-yellow-400/50 backdrop-blur-sm text-yellow-300 font-black text-lg px-6 py-2.5 rounded-2xl">
               SWITCH ARM! ↔
+            </div>
+          </motion.div>
+        )}
+        {mode === 'single' && armRaised && gameState === 'waiting' && (
+          <motion.div
+            key="arm-raised"
+            initial={{ opacity: 0, y: -16 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -16 }}
+            className="absolute top-16 inset-x-0 flex justify-center pointer-events-none z-20"
+          >
+            <div className="bg-orange-950/95 border border-orange-400/50 text-orange-300 font-black text-lg px-6 py-2.5 rounded-2xl">
+              Lower your arm ↓
             </div>
           </motion.div>
         )}
