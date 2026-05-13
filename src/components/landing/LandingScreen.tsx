@@ -52,7 +52,7 @@ export default function LandingScreen({ onStart }: Props) {
     statsRef.current = doFetch
     doFetch()
     const id = setInterval(doFetch, 30_000)
-    return () => clearInterval(id)
+    return () => { clearInterval(id); statsRef.current = null }
   }, [])
 
   useRealtimeVersion(() => statsRef.current?.())
