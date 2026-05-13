@@ -78,6 +78,7 @@ export async function POST(req: NextRequest) {
     p.zadd(tKey, { score: count, member })
     p.expire(wKey, WEEK_TTL)
     p.expire(tKey, TODAY_TTL)
+    p.incr('lb:stats:plays')
     await p.exec()
 
     const [betterCount, totalCount, rank] = await Promise.all([
@@ -113,6 +114,7 @@ export async function POST(req: NextRequest) {
   p.zadd(tKey, { score: time_ms, member })
   p.expire(wKey, WEEK_TTL)
   p.expire(tKey, TODAY_TTL)
+  p.incr('lb:stats:plays')
   await p.exec()
 
   const [betterCount, totalCount, rank] = await Promise.all([

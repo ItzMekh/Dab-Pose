@@ -1,8 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { Zap, Flame } from 'lucide-react'
+import Link from 'next/link'
 import type { GameMode } from '@/types'
 
 interface Props {
@@ -32,8 +33,20 @@ const MODES = [
   },
 ] as const
 
+function formatPlays(n: number): string {
+  return n.toLocaleString('en-US')
+}
+
 export default function LandingScreen({ onStart }: Props) {
   const [selectedMode, setSelectedMode] = useState<GameMode>('single')
+  const [totalPlays, setTotalPlays] = useState<number | null>(null)
+
+  useEffect(() => {
+    fetch('/api/stats')
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (d && typeof d.totalPlays === 'number') setTotalPlays(d.totalPlays) })
+      .catch(() => {})
+  }, [])
 
   return (
     <div className="text-center space-y-10 p-4 sm:p-8">
@@ -48,6 +61,16 @@ export default function LandingScreen({ onStart }: Props) {
           <span className="text-purple-400"> POSE</span>
         </h1>
         <p className="text-gray-400 text-lg sm:text-2xl font-medium">How fast can you dab?</p>
+        {totalPlays !== null && totalPlays > 0 && (
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.3 }}
+            className="text-gray-500 text-sm font-medium"
+          >
+            🎮 {formatPlays(totalPlays)} plays
+          </motion.p>
+        )}
       </motion.div>
 
       {/* Mode selector */}
@@ -125,6 +148,34 @@ export default function LandingScreen({ onStart }: Props) {
         <span>Leaderboard</span>
         <span className="text-gray-500 text-sm font-normal">Top Dabbers →</span>
       </motion.a>
+
+      {/* Privacy notice */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.65 }}
+        className="max-w-lg mx-auto"
+      >
+        <Link
+          href="/privacy"
+          className="inline-flex items-center gap-2 text-gray-500 hover:text-gray-300 text-xs transition-colors"
+        >
+          <span>🔒</span>
+          <span>Camera stays on your device — no video recorded or uploaded</span>
+        </Link>
+      </motion.div>
+
+      {/* Footer */}
+      <motion.footer
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.7 }}
+        className="text-xs text-gray-600 flex justify-center gap-4 pb-2"
+      >
+        <Link href="/terms" className="hover:text-gray-400 transition-colors">Terms</Link>
+        <span>·</span>
+        <Link href="/privacy" className="hover:text-gray-400 transition-colors">Privacy</Link>
+      </motion.footer>
     </div>
   )
 }
