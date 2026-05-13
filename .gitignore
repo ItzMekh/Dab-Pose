@@ -48,6 +48,9 @@ test-results/
 # Testing config
 playwright.config.ts
 
+# Test files
+tests/
+
 # AI / agent context files
 CLAUDE.md
 SKILL.md
