@@ -59,3 +59,4 @@ docs/
 *.jpg
 *.jpeg
 !public/favicon.png
+!public/og.png
