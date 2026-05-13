@@ -66,7 +66,7 @@ export default function LandingScreen({ onStart }: Props) {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.3 }}
-            className="text-gray-500 text-sm font-medium"
+            className="text-gray-400 text-base font-semibold tracking-wide"
           >
             🎮 {formatPlays(totalPlays)} plays
           </motion.p>
