@@ -88,7 +88,16 @@ export default function PrivacyPage() {
         <section className="space-y-3">
           <h2 className="text-white font-bold text-xl">Contact</h2>
           <p className="text-sm leading-relaxed">
-            Questions? Open an issue or reach out via the site&apos;s GitHub repository.
+            Questions?{' '}
+            <a
+              href="https://github.com/ItzMekh/dab-pose/issues"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-purple-400 hover:text-purple-300 transition-colors"
+            >
+              Open an issue on GitHub
+            </a>
+            .
           </p>
         </section>
 
