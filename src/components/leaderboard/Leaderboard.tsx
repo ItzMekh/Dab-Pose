@@ -25,16 +25,15 @@ export default function Leaderboard() {
     const periodParam = period !== 'all' ? `&period=${period}` : ''
     const url = `/api/leaderboard?mode=${tab}${periodParam}`
 
-    // fresh fetch (bypass CDN cache on tab/period change)
-    const doFetch = (fresh: boolean) => {
+    const doFetch = (fresh: boolean, noStore = false) => {
       if (fresh) { setLoading(true); setError(false); setVisible(PAGE) }
-      fetch(url, fresh ? { cache: 'no-store' } : {})
+      fetch(url, (fresh || noStore) ? { cache: 'no-store' } : {})
         .then(r => { if (!r.ok) throw new Error('fetch failed'); return r.json() })
         .then(data => { setScores(Array.isArray(data) ? data : []); setLoading(false) })
         .catch(() => { if (fresh) { setError(true); setLoading(false) } })
     }
 
-    fetchRef.current = () => doFetch(false)
+    fetchRef.current = () => doFetch(false, true)
     doFetch(true)
     const interval = setInterval(() => doFetch(false), 30_000)
     return () => { clearInterval(interval); fetchRef.current = null }
