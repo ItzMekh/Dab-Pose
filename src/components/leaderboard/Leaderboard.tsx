@@ -1,9 +1,10 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
 import type { Score } from '@/types'
+import { useRealtimeVersion } from '@/hooks/useRealtimeVersion'
 
 type Tab = 'single' | 'streak'
 type Period = 'all' | 'week' | 'today'
@@ -18,6 +19,7 @@ export default function Leaderboard() {
   const [error, setError] = useState(false)
   const [retry, setRetry] = useState(0)
   const [visible, setVisible] = useState(PAGE)
+  const fetchRef = useRef<(() => void) | null>(null)
 
   useEffect(() => {
     const periodParam = period !== 'all' ? `&period=${period}` : ''
@@ -32,10 +34,13 @@ export default function Leaderboard() {
         .catch(() => { if (fresh) { setError(true); setLoading(false) } })
     }
 
+    fetchRef.current = () => doFetch(false)
     doFetch(true)
-    const interval = setInterval(() => doFetch(false), 15_000)
-    return () => clearInterval(interval)
+    const interval = setInterval(() => doFetch(false), 30_000)
+    return () => { clearInterval(interval); fetchRef.current = null }
   }, [tab, period, retry])
+
+  useRealtimeVersion(() => fetchRef.current?.())
 
   const shown = scores.slice(0, visible)
   const hasMore = visible < scores.length
