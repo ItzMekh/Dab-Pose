@@ -20,6 +20,6 @@ export async function GET(req: NextRequest) {
   const data = raw.map(m => (typeof m === 'string' ? JSON.parse(m) : m))
 
   return NextResponse.json(data, {
-    headers: { 'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=60' },
+    headers: { 'Cache-Control': 'public, s-maxage=10, stale-while-revalidate=20' },
   })
 }

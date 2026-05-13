@@ -20,14 +20,21 @@ export default function Leaderboard() {
   const [visible, setVisible] = useState(PAGE)
 
   useEffect(() => {
-    setLoading(true)
-    setError(false)
-    setVisible(PAGE)
     const periodParam = period !== 'all' ? `&period=${period}` : ''
-    fetch(`/api/leaderboard?mode=${tab}${periodParam}`)
-      .then(r => { if (!r.ok) throw new Error('fetch failed'); return r.json() })
-      .then(data => { setScores(Array.isArray(data) ? data : []); setLoading(false) })
-      .catch(() => { setError(true); setLoading(false) })
+    const url = `/api/leaderboard?mode=${tab}${periodParam}`
+
+    // fresh fetch (bypass CDN cache on tab/period change)
+    const doFetch = (fresh: boolean) => {
+      if (fresh) { setLoading(true); setError(false); setVisible(PAGE) }
+      fetch(url, fresh ? { cache: 'no-store' } : {})
+        .then(r => { if (!r.ok) throw new Error('fetch failed'); return r.json() })
+        .then(data => { setScores(Array.isArray(data) ? data : []); setLoading(false) })
+        .catch(() => { if (fresh) { setError(true); setLoading(false) } })
+    }
+
+    doFetch(true)
+    const interval = setInterval(() => doFetch(false), 15_000)
+    return () => clearInterval(interval)
   }, [tab, period, retry])
 
   const shown = scores.slice(0, visible)
