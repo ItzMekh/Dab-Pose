@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import { motion } from 'framer-motion'
 import { Zap, Flame } from 'lucide-react'
 import Link from 'next/link'
+import { useSession } from 'next-auth/react'
 import type { GameMode } from '@/types'
 import { useRealtimeVersion } from '@/hooks/useRealtimeVersion'
 
@@ -42,6 +43,7 @@ export default function LandingScreen({ onStart }: Props) {
   const [selectedMode, setSelectedMode] = useState<GameMode>('single')
   const [totalPlays, setTotalPlays] = useState<number | null>(null)
   const statsRef = useRef<(() => void) | null>(null)
+  const { data: session } = useSession()
 
   useEffect(() => {
     const doFetch = () =>
@@ -150,14 +152,29 @@ export default function LandingScreen({ onStart }: Props) {
         transition={{ delay: 0.45 }}
         className="text-gray-500 text-sm"
       >
-        Track your dabs —{' '}
-        <Link href="/login" className="text-gray-400 hover:text-white transition-colors">
-          Sign in
-        </Link>
-        {' / '}
-        <Link href="/signup" className="text-gray-400 hover:text-white transition-colors">
-          Create account
-        </Link>
+        {session?.user ? (
+          <>
+            Signed in as{' '}
+            <Link href="/profile/me" className="text-purple-400 hover:text-white transition-colors font-medium">
+              {session.user.name ?? session.user.email}
+            </Link>
+            {' · '}
+            <Link href="/profile/me" className="text-gray-400 hover:text-white transition-colors">
+              View profile →
+            </Link>
+          </>
+        ) : (
+          <>
+            Track your dabs —{' '}
+            <Link href="/login" className="text-gray-400 hover:text-white transition-colors">
+              Sign in
+            </Link>
+            {' / '}
+            <Link href="/signup" className="text-gray-400 hover:text-white transition-colors">
+              Create account
+            </Link>
+          </>
+        )}
       </motion.p>
 
       <motion.a
