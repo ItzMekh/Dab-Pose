@@ -7,6 +7,7 @@ import Link from 'next/link'
 import { useSession } from 'next-auth/react'
 import type { GameMode } from '@/types'
 import { useRealtimeVersion } from '@/hooks/useRealtimeVersion'
+import ProfileCard from './ProfileCard'
 
 interface Props {
   onStart: (mode: GameMode) => void
@@ -146,25 +147,16 @@ export default function LandingScreen({ onStart }: Props) {
         Let&apos;s Go 🙌
       </motion.button>
 
-      <motion.p
+      <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.45 }}
-        className="text-gray-500 text-sm"
+        className="w-full max-w-lg mx-auto"
       >
-        {session?.user ? (
-          <>
-            Signed in as{' '}
-            <Link href="/profile/me" className="text-purple-400 hover:text-white transition-colors font-medium">
-              {session.user.name ?? session.user.email}
-            </Link>
-            {' · '}
-            <Link href="/profile/me" className="text-gray-400 hover:text-white transition-colors">
-              View profile →
-            </Link>
-          </>
+        {session?.user?.name ? (
+          <ProfileCard username={session.user.name} avatarUrl={session.user.image} />
         ) : (
-          <>
+          <p className="text-gray-500 text-sm text-center">
             Track your dabs —{' '}
             <Link href="/login" className="text-gray-400 hover:text-white transition-colors">
               Sign in
@@ -173,9 +165,9 @@ export default function LandingScreen({ onStart }: Props) {
             <Link href="/signup" className="text-gray-400 hover:text-white transition-colors">
               Create account
             </Link>
-          </>
+          </p>
         )}
-      </motion.p>
+      </motion.div>
 
       <motion.a
         href="/leaderboard"
