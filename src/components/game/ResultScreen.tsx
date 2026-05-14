@@ -6,6 +6,7 @@ import type { GameResult } from '@/types'
 import { submitScore, validateUsername, fetchLeaderboard } from '@/lib/api'
 import { useUsername } from '@/hooks/useUsername'
 import { useStableKeyboardShortcuts } from '@/hooks/useStableKeyboardShortcuts'
+import { useCountry } from '@/hooks/useCountry'
 
 interface Props {
   result: GameResult
@@ -39,6 +40,7 @@ function formatTimeDisplay(ms: number): { primary: string; unit: string } {
 
 export default function ResultScreen({ result, onRetry, onExit }: Props) {
   const { username, setUsername, saveUsername } = useUsername()
+  const country = useCountry()
   const [validationErr, setValidationErr] = useState<string | null>(null)
   const [submitted, setSubmitted] = useState(false)
   const [submitting, setSubmitting] = useState(false)
@@ -70,7 +72,7 @@ export default function ResultScreen({ result, onRetry, onExit }: Props) {
     setValidationErr(null)
     setSubmitErr(null)
     setSubmitting(true)
-    const res = await submitScore({ username: username.trim(), time_ms: result.time_ms })
+    const res = await submitScore({ username: username.trim(), time_ms: result.time_ms, country })
     setSubmitting(false)
     if (res.ok) {
       saveUsername(username)

@@ -34,6 +34,7 @@ export interface Score {
   count: number | null
   mode: 'single' | 'streak'
   created_at: string
+  country?: string  // ISO 3166-1 alpha-2 or "XX" for unknown
 }
 
 export interface GameResult {

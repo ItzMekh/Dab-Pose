@@ -21,3 +21,15 @@ export function weekKey(): string {
 export function todayKey(): string {
   return new Date().toISOString().slice(0, 10)
 }
+
+export function countryAllKey(): string {
+  return 'lb:country:all'
+}
+
+export function countryWeekKey(): string {
+  return `lb:country:week:${weekKey()}`
+}
+
+export function countryTodayKey(): string {
+  return `lb:country:today:${todayKey()}`
+}
