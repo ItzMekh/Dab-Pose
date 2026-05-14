@@ -27,8 +27,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   ],
   session: { strategy: 'jwt' },
   callbacks: {
-    async jwt({ token, user, account, profile }) {
-      // Credentials sign-in: user object present
+    async jwt({ token, user, account, profile, trigger, session: updateData }) {
+      // Credentials sign-in
       if (user && account?.provider === 'credentials') {
         token.id = user.id
         token.username = user.name
@@ -63,9 +63,26 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
               .returning({ id: users.id, username: users.username })
             token.id = newUser.id
             token.username = newUser.username
+            token.needsUsernameSetup = true
           }
         } catch (err) {
           console.error('[auth] Google JWT callback DB error:', err)
+        }
+      }
+      // Session update — refresh username from DB, clear flags
+      if (trigger === 'update' && token.id) {
+        try {
+          const [dbUser] = await db
+            .select({ username: users.username })
+            .from(users)
+            .where(eq(users.id, token.id as string))
+            .limit(1)
+          if (dbUser) token.username = dbUser.username
+        } catch (err) {
+          console.error('[auth] session update DB error:', err)
+        }
+        if ((updateData as { needsUsernameSetup?: boolean })?.needsUsernameSetup === false) {
+          token.needsUsernameSetup = false
         }
       }
       return token
@@ -73,6 +90,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     async session({ session, token }) {
       if (token.id) session.user.id = token.id as string
       if (token.username) session.user.name = token.username as string
+      if (token.needsUsernameSetup) session.user.needsUsernameSetup = true
       return session
     },
   },

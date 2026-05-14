@@ -8,6 +8,7 @@ import { useSession } from 'next-auth/react'
 import type { GameMode } from '@/types'
 import { useRealtimeVersion } from '@/hooks/useRealtimeVersion'
 import ProfileCard from './ProfileCard'
+import UsernameSetupModal from './UsernameSetupModal'
 
 interface Props {
   onStart: (mode: GameMode) => void
@@ -62,8 +63,13 @@ export default function LandingScreen({ onStart }: Props) {
 
   return (
     <div className="relative text-center space-y-10 p-4 sm:p-8">
+      {/* Username setup modal — shown on first Google sign-in */}
+      {session?.user?.needsUsernameSetup && session.user.name && (
+        <UsernameSetupModal initialUsername={session.user.name} />
+      )}
+
       {/* Profile card — fixed top-left */}
-      {session?.user?.name && (
+      {session?.user?.name && !session.user.needsUsernameSetup && (
         <motion.div
           initial={{ opacity: 0, x: -16 }}
           animate={{ opacity: 1, x: 0 }}

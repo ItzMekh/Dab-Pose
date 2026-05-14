@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { signOut } from 'next-auth/react'
+import { signOut, useSession } from 'next-auth/react'
 
 async function patchSetting(field: string, value: string, currentPassword?: string) {
   const body: Record<string, string> = { field, value }
@@ -22,6 +22,7 @@ interface Props {
 
 export default function SettingsTab({ username: initialUsername, country: initialCountry, hasPassword }: Props) {
   const router = useRouter()
+  const { update } = useSession()
   const [username, setUsername] = useState(initialUsername)
   const [country, setCountry] = useState(initialCountry)
   const [currentPw, setCurrentPw] = useState('')
@@ -46,6 +47,7 @@ export default function SettingsTab({ username: initialUsername, country: initia
       setMessage('err', data.error ?? 'Failed')
     } else {
       setMessage('ok', 'Username updated')
+      await update()
       router.push(`/profile/${data.username}`)
     }
   }
