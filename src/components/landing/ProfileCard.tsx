@@ -41,8 +41,8 @@ export default function ProfileCard({ username, avatarUrl }: Props) {
   const flag = country && country !== 'XX' ? (FLAG[country] ?? '🌍') : null
 
   return (
-    <Link href="/profile/me" className="group block w-full max-w-lg">
-      <div className="flex items-center gap-3 bg-white/5 hover:bg-white/8 border border-white/10 hover:border-purple-500/40 rounded-2xl px-4 py-3 transition-all duration-200">
+    <Link href="/profile/me" className="group block">
+      <div className="flex items-center gap-3 bg-black/80 backdrop-blur-sm border border-white/10 hover:border-purple-500/40 rounded-xl px-3 py-2 transition-all duration-200">
         {avatarUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={avatarUrl} alt={username} className="w-9 h-9 rounded-full object-cover shrink-0" />

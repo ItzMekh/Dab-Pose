@@ -62,13 +62,13 @@ export default function LandingScreen({ onStart }: Props) {
 
   return (
     <div className="relative text-center space-y-10 p-4 sm:p-8">
-      {/* Profile card — top-left */}
+      {/* Profile card — fixed top-left */}
       {session?.user?.name && (
         <motion.div
           initial={{ opacity: 0, x: -16 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.2 }}
-          className="absolute top-0 left-0"
+          className="fixed top-4 left-4 z-30"
         >
           <ProfileCard username={session.user.name} avatarUrl={session.user.image} />
         </motion.div>
