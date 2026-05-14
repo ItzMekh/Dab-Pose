@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { redis, weekKey, todayKey, countryAllKey, countryWeekKey, countryTodayKey } from '@/lib/redis'
+import { auth } from '@/auth'
+import { db } from '@/lib/db'
+import { scores as scoresTable } from '@/lib/schema'
 
 const MIN_MS = 100
 const MAX_MS = 30_000
@@ -30,6 +33,9 @@ function isRateLimited(ip: string): boolean {
 const SECURITY_HEADERS = { 'X-Content-Type-Options': 'nosniff' } as const
 
 export async function POST(req: NextRequest) {
+  const session = await auth()
+  const userId = session?.user?.id ?? null
+
   const ip =
     req.headers.get('x-forwarded-for')?.split(',')[0].trim() ?? 'unknown'
   if (isRateLimited(ip)) {
@@ -106,6 +112,18 @@ export async function POST(req: NextRequest) {
     const percentile = Math.round(((total - better) / total) * 100)
     const isKing = rank === 0
 
+    if (userId) {
+      await db.insert(scoresTable).values({
+        userId,
+        username: user,
+        mode: 'streak',
+        timeMs: bestMs,
+        count: count as number,
+        country,
+        rankGlobal: typeof rank === 'number' ? rank + 1 : null,
+      })
+    }
+
     return NextResponse.json(
       { id, username: user, count, time_ms: bestMs, mode: 'streak', created_at: now, percentile, isKing },
       { status: 201, headers: SECURITY_HEADERS }
@@ -149,6 +167,18 @@ export async function POST(req: NextRequest) {
   const better = (betterCount as number) ?? 0
   const percentile = Math.round(((total - better) / total) * 100)
   const isKing = rank === 0
+
+  if (userId) {
+    await db.insert(scoresTable).values({
+      userId,
+      username: user,
+      mode: 'single',
+      timeMs: time_ms as number,
+      count: null,
+      country,
+      rankGlobal: typeof rank === 'number' ? rank + 1 : null,
+    })
+  }
 
   return NextResponse.json(
     { id, username: user, time_ms, count: null, mode: 'single', created_at: now, percentile, isKing },

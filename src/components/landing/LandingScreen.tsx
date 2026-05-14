@@ -144,6 +144,22 @@ export default function LandingScreen({ onStart }: Props) {
         Let&apos;s Go 🙌
       </motion.button>
 
+      <motion.p
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.45 }}
+        className="text-gray-500 text-sm"
+      >
+        Track your dabs —{' '}
+        <Link href="/login" className="text-gray-400 hover:text-white transition-colors">
+          Sign in
+        </Link>
+        {' / '}
+        <Link href="/signup" className="text-gray-400 hover:text-white transition-colors">
+          Create account
+        </Link>
+      </motion.p>
+
       <motion.a
         href="/leaderboard"
         initial={{ opacity: 0, y: 8 }}
