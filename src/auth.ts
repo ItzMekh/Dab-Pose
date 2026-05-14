@@ -35,33 +35,37 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       }
       // Google sign-in (account only present on first sign-in)
       if (account?.provider === 'google' && profile) {
-        const email = profile.email as string
-        const [existing] = await db
-          .select({ id: users.id, username: users.username })
-          .from(users)
-          .where(eq(users.email, email))
-          .limit(1)
-        if (existing) {
-          token.id = existing.id
-          token.username = existing.username
-        } else {
-          const base = ((profile.name as string) ?? 'user')
-            .toLowerCase()
-            .replace(/[^a-z0-9_]/g, '')
-            .slice(0, 16) || 'user'
-          const username = `${base}_${Math.random().toString(36).slice(2, 6)}`
-          const [newUser] = await db
-            .insert(users)
-            .values({
-              email,
-              username,
-              googleId: profile.sub as string,
-              avatarUrl: (profile.picture as string) ?? null,
-              country: 'XX',
-            })
-            .returning({ id: users.id, username: users.username })
-          token.id = newUser.id
-          token.username = newUser.username
+        try {
+          const email = profile.email as string
+          const [existing] = await db
+            .select({ id: users.id, username: users.username })
+            .from(users)
+            .where(eq(users.email, email))
+            .limit(1)
+          if (existing) {
+            token.id = existing.id
+            token.username = existing.username
+          } else {
+            const base = ((profile.name as string) ?? 'user')
+              .toLowerCase()
+              .replace(/[^a-z0-9_]/g, '')
+              .slice(0, 16) || 'user'
+            const username = `${base}_${Math.random().toString(36).slice(2, 6)}`
+            const [newUser] = await db
+              .insert(users)
+              .values({
+                email,
+                username,
+                googleId: profile.sub as string,
+                avatarUrl: (profile.picture as string) ?? null,
+                country: 'XX',
+              })
+              .returning({ id: users.id, username: users.username })
+            token.id = newUser.id
+            token.username = newUser.username
+          }
+        } catch (err) {
+          console.error('[auth] Google JWT callback DB error:', err)
         }
       }
       return token
