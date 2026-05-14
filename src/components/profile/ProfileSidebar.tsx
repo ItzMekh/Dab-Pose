@@ -67,6 +67,13 @@ export default function ProfileSidebar({ user, activeTab, isOwner }: Props) {
       </div>
 
       <nav className="flex flex-col gap-1">
+        <Link
+          href="/"
+          className="text-xs px-3 py-2 rounded-lg transition-colors text-gray-600 hover:text-white hover:bg-white/5"
+        >
+          ← Home
+        </Link>
+        <div className="border-t border-white/5 my-1" />
         {TABS.map(({ id, label }) => {
           if (id === 'settings' && !isOwner) return null
           const active = activeTab === id

@@ -61,7 +61,18 @@ export default function LandingScreen({ onStart }: Props) {
   useRealtimeVersion(() => statsRef.current?.())
 
   return (
-    <div className="text-center space-y-10 p-4 sm:p-8">
+    <div className="relative text-center space-y-10 p-4 sm:p-8">
+      {/* Profile card — top-left */}
+      {session?.user?.name && (
+        <motion.div
+          initial={{ opacity: 0, x: -16 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.2 }}
+          className="absolute top-0 left-0"
+        >
+          <ProfileCard username={session.user.name} avatarUrl={session.user.image} />
+        </motion.div>
+      )}
       <motion.div
         initial={{ opacity: 0, y: -40 }}
         animate={{ opacity: 1, y: 0 }}
@@ -147,27 +158,23 @@ export default function LandingScreen({ onStart }: Props) {
         Let&apos;s Go 🙌
       </motion.button>
 
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.45 }}
-        className="w-full max-w-lg mx-auto"
-      >
-        {session?.user?.name ? (
-          <ProfileCard username={session.user.name} avatarUrl={session.user.image} />
-        ) : (
-          <p className="text-gray-500 text-sm text-center">
-            Track your dabs —{' '}
-            <Link href="/login" className="text-gray-400 hover:text-white transition-colors">
-              Sign in
-            </Link>
-            {' / '}
-            <Link href="/signup" className="text-gray-400 hover:text-white transition-colors">
-              Create account
-            </Link>
-          </p>
-        )}
-      </motion.div>
+      {!session?.user && (
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.45 }}
+          className="text-gray-500 text-sm"
+        >
+          Track your dabs —{' '}
+          <Link href="/login" className="text-gray-400 hover:text-white transition-colors">
+            Sign in
+          </Link>
+          {' / '}
+          <Link href="/signup" className="text-gray-400 hover:text-white transition-colors">
+            Create account
+          </Link>
+        </motion.p>
+      )}
 
       <motion.a
         href="/leaderboard"
