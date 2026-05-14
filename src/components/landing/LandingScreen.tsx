@@ -77,7 +77,7 @@ export default function LandingScreen({ onStart }: Props) {
             transition={{ delay: 0.3 }}
             className="text-gray-400 text-base font-normal tracking-widest"
           >
-            {formatPlays(totalPlays)} PLAYERS
+            {formatPlays(totalPlays)} DABS WORLDWIDE
           </motion.p>
         )}
       </motion.div>

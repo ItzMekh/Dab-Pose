@@ -6,6 +6,7 @@ import type { StreakResult } from '@/types'
 import { submitScore, validateUsername, fetchLeaderboard } from '@/lib/api'
 import { useUsername } from '@/hooks/useUsername'
 import { useStableKeyboardShortcuts } from '@/hooks/useStableKeyboardShortcuts'
+import { useCountry } from '@/hooks/useCountry'
 
 interface Props {
   result: StreakResult
@@ -23,6 +24,7 @@ function getRating(count: number): { label: string; color: string } {
 
 export default function StreakResultScreen({ result, onRetry, onExit }: Props) {
   const { username, setUsername, saveUsername } = useUsername()
+  const country = useCountry()
   const [validationErr, setValidationErr] = useState<string | null>(null)
   const [submitted, setSubmitted] = useState(false)
   const [submitting, setSubmitting] = useState(false)
@@ -58,6 +60,7 @@ export default function StreakResultScreen({ result, onRetry, onExit }: Props) {
       mode: 'streak',
       count: result.count,
       time_ms: result.best_time_ms ?? undefined,
+      country,
     })
     setSubmitting(false)
     if (res.ok) {
