@@ -51,6 +51,7 @@ export interface SubmitPayload {
   time_ms?: number
   mode?: 'single' | 'streak'
   count?: number
+  country?: string  // ISO 3166-1 alpha-2 or 'XX'
 }
 
 export interface SubmitResult {

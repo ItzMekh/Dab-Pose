@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { redis, weekKey, todayKey } from '@/lib/redis'
+import { redis, weekKey, todayKey, countryAllKey, countryWeekKey, countryTodayKey } from '@/lib/redis'
 
 const MIN_MS = 100
 const MAX_MS = 30_000
@@ -47,6 +47,12 @@ export async function POST(req: NextRequest) {
 
   const { username, time_ms, mode = 'single', count } = body as Record<string, unknown>
 
+  const rawCountry = (body as Record<string, unknown>).country
+  const country =
+    typeof rawCountry === 'string' && /^[A-Z]{2}$/i.test(rawCountry)
+      ? rawCountry.toUpperCase()
+      : 'XX'
+
   if (typeof username !== 'string' || !USERNAME_RE.test(username.trim())) {
     return NextResponse.json({ error: 'Invalid username' }, { status: 400, headers: SECURITY_HEADERS })
   }
@@ -67,10 +73,13 @@ export async function POST(req: NextRequest) {
         ? time_ms
         : null
 
-    const member = JSON.stringify({ id, username: user, count, time_ms: bestMs, mode: 'streak', created_at: now })
+    const member = JSON.stringify({ id, username: user, count, time_ms: bestMs, mode: 'streak', created_at: now, country })
     const allKey = 'lb:streak:all'
     const wKey = `lb:streak:week:${weekKey()}`
     const tKey = `lb:streak:today:${todayKey()}`
+    const cAllKey = countryAllKey()
+    const cWKey = countryWeekKey()
+    const cTKey = countryTodayKey()
 
     const p = redis.pipeline()
     p.zadd(allKey, { score: count, member })
@@ -79,6 +88,11 @@ export async function POST(req: NextRequest) {
     p.expire(wKey, WEEK_TTL)
     p.expire(tKey, TODAY_TTL)
     p.incr('lb:stats:plays')
+    p.zincrby(cAllKey, 1, country)
+    p.zincrby(cWKey, 1, country)
+    p.zincrby(cTKey, 1, country)
+    p.expire(cWKey, WEEK_TTL)
+    p.expire(cTKey, TODAY_TTL)
     await p.exec()
 
     const [betterCount, totalCount, rank] = await Promise.all([
@@ -103,10 +117,13 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid time_ms' }, { status: 400, headers: SECURITY_HEADERS })
   }
 
-  const member = JSON.stringify({ id, username: user, time_ms, count: null, mode: 'single', created_at: now })
+  const member = JSON.stringify({ id, username: user, time_ms, count: null, mode: 'single', created_at: now, country })
   const allKey = 'lb:single:all'
   const wKey = `lb:single:week:${weekKey()}`
   const tKey = `lb:single:today:${todayKey()}`
+  const cAllKey = countryAllKey()
+  const cWKey = countryWeekKey()
+  const cTKey = countryTodayKey()
 
   const p = redis.pipeline()
   p.zadd(allKey, { score: time_ms, member })
@@ -115,6 +132,11 @@ export async function POST(req: NextRequest) {
   p.expire(wKey, WEEK_TTL)
   p.expire(tKey, TODAY_TTL)
   p.incr('lb:stats:plays')
+  p.zincrby(cAllKey, 1, country)
+  p.zincrby(cWKey, 1, country)
+  p.zincrby(cTKey, 1, country)
+  p.expire(cWKey, WEEK_TTL)
+  p.expire(cTKey, TODAY_TTL)
   await p.exec()
 
   const [betterCount, totalCount, rank] = await Promise.all([
