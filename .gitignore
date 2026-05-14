@@ -54,7 +54,7 @@ tests/
 # AI / agent context files
 CLAUDE.md
 SKILL.md
-docs/
+
 .obsidian/
 .playwright-mcp/
 .claude/
@@ -64,3 +64,4 @@ docs/
 !public/favicon.png
 !public/og.png
 !public/title-web.png
+.superpowers/
