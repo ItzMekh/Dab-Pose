@@ -68,17 +68,30 @@ export default function LandingScreen({ onStart }: Props) {
         <UsernameSetupModal initialUsername={session.user.name} />
       )}
 
-      {/* Profile card — fixed top-left */}
-      {session?.user?.name && !session.user.needsUsernameSetup && (
-        <motion.div
-          initial={{ opacity: 0, x: -16 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.2 }}
-          className="fixed top-4 left-4 z-30"
-        >
+      {/* Top-left card — profile when signed in, sign-in prompt when not */}
+      <motion.div
+        initial={{ opacity: 0, x: -16 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ delay: 0.2 }}
+        className="fixed top-4 left-4 z-30"
+      >
+        {session?.user?.name && !session.user.needsUsernameSetup ? (
           <ProfileCard username={session.user.name} avatarUrl={session.user.image} />
-        </motion.div>
-      )}
+        ) : !session?.user && (
+          <Link href="/login" className="group block">
+            <div className="flex items-center gap-3 bg-black/80 backdrop-blur-sm border border-white/10 hover:border-purple-500/40 rounded-xl px-3 py-2 transition-all duration-200">
+              <div className="w-9 h-9 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-gray-500 group-hover:text-purple-400 text-base shrink-0 transition-colors">
+                👤
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-white text-sm font-bold leading-tight">Sign in</p>
+                <p className="text-gray-500 text-xs">Track your dabs</p>
+              </div>
+              <span className="text-gray-500 group-hover:text-purple-400 text-sm transition-colors shrink-0">→</span>
+            </div>
+          </Link>
+        )}
+      </motion.div>
       <motion.div
         initial={{ opacity: 0, y: -40 }}
         animate={{ opacity: 1, y: 0 }}
@@ -169,15 +182,11 @@ export default function LandingScreen({ onStart }: Props) {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.45 }}
-          className="text-gray-500 text-sm"
+          className="text-gray-600 text-xs"
         >
-          Track your dabs —{' '}
-          <Link href="/login" className="text-gray-400 hover:text-white transition-colors">
-            Sign in
-          </Link>
-          {' / '}
-          <Link href="/signup" className="text-gray-400 hover:text-white transition-colors">
-            Create account
+          New here?{' '}
+          <Link href="/signup" className="text-gray-500 hover:text-white transition-colors">
+            Create a free account
           </Link>
         </motion.p>
       )}

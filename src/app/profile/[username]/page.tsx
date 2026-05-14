@@ -40,9 +40,9 @@ export default async function ProfilePage({ params, searchParams }: Props) {
   const safeStats = stats ?? { bestTime: null, bestStreak: null, totalPlays: 0 }
 
   return (
-    <div className="min-h-screen bg-black text-white flex">
+    <div className="min-h-screen bg-black text-white flex flex-col sm:flex-row">
       <ProfileSidebar user={user} activeTab={tab} isOwner={isOwner} />
-      <main className="flex-1 p-6 overflow-auto">
+      <main className="flex-1 p-4 sm:p-6 overflow-auto">
         {tab === 'overview' && <OverviewTab stats={safeStats} />}
         {tab === 'history' && <HistoryTab username={username} />}
         {tab === 'settings' && isOwner && (
