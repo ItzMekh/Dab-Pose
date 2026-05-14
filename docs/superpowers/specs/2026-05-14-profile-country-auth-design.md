@@ -16,6 +16,78 @@ Phase 3: Profile Dashboard          (depends on Phase 2)
 
 ---
 
+## Database Architecture
+
+### Split storage: Redis + Neon Postgres
+
+**Redis (Upstash — unchanged role):** leaderboards, global counter, rate limiting
+- Real-time sorted sets for leaderboards remain in Redis — no latency change
+- Score submit still pipelines into Redis first, Postgres write happens in parallel via `Promise.all`
+
+**Neon Postgres (new):** user accounts, score history
+- ORM: **Drizzle ORM** — type-safe schema, migration files, works natively with Vercel + Neon
+- Driver: `@neondatabase/serverless` HTTP driver — built-in PgBouncer connection pooling
+- Latency: warm ~2–10ms, cold start ~100–200ms (only affects user/history reads, not leaderboard)
+- Free tier: 0.5 GB storage — sufficient for thousands of users
+
+### Postgres Schema (Drizzle)
+
+```ts
+// users
+export const users = pgTable('users', {
+  id:            uuid('id').primaryKey().defaultRandom(),
+  email:         text('email').unique().notNull(),
+  username:      text('username').unique().notNull(),
+  passwordHash:  text('password_hash'),          // NULL = Google-only account
+  googleId:      text('google_id').unique(),
+  avatarUrl:     text('avatar_url'),
+  country:       char('country', { length: 2 }).notNull().default('XX'),
+  createdAt:     timestamp('created_at').defaultNow(),
+})
+
+// score history (per authenticated user)
+export const scores = pgTable('scores', {
+  id:          uuid('id').primaryKey().defaultRandom(),
+  userId:      uuid('user_id').references(() => users.id, { onDelete: 'set null' }),
+  username:    text('username').notNull(),        // snapshot at submit time
+  mode:        text('mode').notNull(),            // 'single' | 'streak'
+  timeMs:      integer('time_ms'),
+  count:       integer('count'),
+  country:     char('country', { length: 2 }).notNull().default('XX'),
+  rankGlobal:  integer('rank_global'),            // snapshot at submit time
+  rankCountry: integer('rank_country'),           // snapshot at submit time
+  createdAt:   timestamp('created_at').defaultNow(),
+}, (t) => [
+  index('scores_user_created_idx').on(t.userId, t.createdAt.desc()),
+  index('scores_country_mode_idx').on(t.country, t.mode, t.createdAt.desc()),
+])
+```
+
+### Redis Keys (unchanged + Phase 1 additions)
+
+| Key | Type | Description |
+|---|---|---|
+| `lb:single:*` | ZSET | Existing single leaderboards |
+| `lb:streak:*` | ZSET | Existing streak leaderboards |
+| `lb:stats:plays` | STRING | Global play counter |
+| `lb:country:all` | ZSET | Country all-time total dabs |
+| `lb:country:week:{Www}` | ZSET | Country weekly, TTL 14d |
+| `lb:country:today:{date}` | ZSET | Country daily, TTL 2d |
+
+User keys (`user:{id}`, `user:email:{email}`, `user:username:{name}`) previously planned for Redis are **replaced by Postgres**.
+
+### Score submit flow (with Neon)
+
+```ts
+await Promise.all([
+  redis.pipeline(/* ZADD leaderboards + ZINCRBY country + INCR plays */),
+  db.insert(scores).values({ userId, mode, timeMs, country, ... }),
+])
+// SSE push after both resolve
+```
+
+---
+
 ## Phase 1 — Country & Global Counter
 
 ### Global DAB Counter
@@ -55,9 +127,9 @@ New tab **"🌍 Countries"** added to existing `/leaderboard` page alongside Sin
 ### New Redis Keys (Phase 1)
 
 ```
-lb:country:all              ZSET  member=countryCode  score=totalDabs
-lb:country:week:{Www}       ZSET  member=countryCode  score=totalDabs  TTL=14d
-lb:country:today:{YYYY-MM-DD} ZSET member=countryCode score=totalDabs  TTL=2d
+lb:country:all                ZSET  member=countryCode  score=totalDabs
+lb:country:week:{Www}         ZSET  member=countryCode  score=totalDabs  TTL=14d
+lb:country:today:{YYYY-MM-DD} ZSET  member=countryCode  score=totalDabs  TTL=2d
 ```
 
 Score pipeline on submit: existing 3× ZADD + 2× EXPIRE + INCR, plus `ZINCRBY` on 3 country keys — all in one Upstash pipeline (one HTTP roundtrip).
@@ -76,8 +148,9 @@ GET  /api/leaderboard?mode=country&period=all|week|today
 ### Stack
 
 - **Auth.js v5** (next-auth) — Credentials provider + Google provider
-- **JWT sessions** (`strategy: "jwt"`) — no Redis session lookup per request
+- **JWT sessions** (`strategy: "jwt"`) — zero DB lookup per request, session verified client-side
 - **bcryptjs** — password hashing (cost factor 12)
+- **Drizzle ORM** — user reads/writes against Neon Postgres
 
 ### Pages
 
@@ -96,8 +169,8 @@ GET  /api/leaderboard?mode=country&period=all|week|today
 
 ```
 Guest:   Play → submit score with username string (unchanged)
-Login:   Play → submit score includes userId → linked to profile
-Google:  One-click → auto-create account if email not seen before
+Login:   Play → submit score includes userId → row inserted in scores table
+Google:  One-click → auto-create user row if email not seen before
 ```
 
 No forced login. Users access full game without an account.
@@ -105,9 +178,8 @@ No forced login. Users access full game without an account.
 ### Username Rules
 
 - 3–20 characters, alphanumeric + underscore
-- Uniqueness enforced for accounts only (guests are unaffected)
+- Uniqueness enforced at DB level (`UNIQUE` constraint) + checked before insert
 - **Collision:** block + suggest 3 alternatives (append number or country suffix, e.g. `MekhDab → MekhDab2, MekhDab_TH, MekhDab99`)
-- Reverse-lookup key: `user:username:{name} → userId`
 
 ### Email/Password
 
@@ -117,17 +189,9 @@ No forced login. Users access full game without an account.
 
 ### Profile Picture
 
-- **Google OAuth users:** use Google profile picture URL (stored in `user:{id}` hash, no file storage)
+- **Google OAuth users:** use Google profile picture URL (stored in `users.avatar_url`, no file storage)
 - **Email/password users:** letter avatar (first char of username, colour deterministically derived from username hash)
 - **Future enhancement:** client-side canvas resize to 200×200 JPEG (~10 KB), upload to Vercel Blob
-
-### New Redis Keys (Phase 2)
-
-```
-user:{id}               HASH  → email, passwordHash, username, country, avatarUrl, createdAt
-user:email:{email}      STRING → userId   (reverse lookup)
-user:username:{name}    STRING → userId   (uniqueness + reverse lookup)
-```
 
 ---
 
@@ -156,34 +220,41 @@ user:username:{name}    STRING → userId   (uniqueness + reverse lookup)
 - Recent games (last 5): mode icon + result + "PB" badge if personal best + time ago
 
 **Main content — History tab:**
-- Paginated list of all scored games (20 per page, infinite scroll)
+- Paginated list of all scored games (20 per page, cursor-based on `created_at`)
 - Each item: mode icon + result + rank at submission time + date
-- Filter by mode (All / Single / Streak)
+- Filter by mode (All / Single / Streak) — SQL `WHERE mode = ?`
 
 **Main content — Settings tab:**
-- Change username (uniqueness check, suggests alternatives on conflict)
-- Change country (dropdown, overrides IP detection going forward)
-- Change password (current + new + confirm — email users only)
-- Delete account (confirmation required, purges all user keys; existing leaderboard scores remain as anonymous entries with original username string)
+- Change username (uniqueness check via DB, suggests alternatives on conflict)
+- Change country (dropdown, overrides IP detection going forward — updates `users.country`)
+- Change password (current + new + confirm — email users only, `passwordHash` not null check)
+- Delete account (confirmation required; `users` row deleted, `scores.user_id` set to NULL via `ON DELETE SET NULL`; leaderboard entries in Redis remain as anonymous username strings)
 
-### Score History Storage
+### Profile Data Queries
 
+```ts
+// Overview: aggregate from scores table
+db.select({
+  bestTime: min(scores.timeMs),
+  bestStreak: max(scores.count),
+  totalPlays: count(),
+}).from(scores).where(eq(scores.userId, id))
+
+// History: paginated, filterable
+db.select().from(scores)
+  .where(and(eq(scores.userId, id), modeFilter))
+  .orderBy(desc(scores.createdAt))
+  .limit(20).offset(cursor)
 ```
-scores:user:{userId}    ZSET  member=scoreJSON  score=timestamp_ms  (no TTL)
-```
-
-On score submit (when logged in): ZADD to existing leaderboard keys + ZADD to `scores:user:{userId}`.
 
 ### Public Profile Visibility
 
 All profile data on `/profile/[username]` is public. No private/public toggle for MVP.  
-Settings tab only visible to the authenticated owner (server component with session check).
+Settings tab only rendered for the authenticated owner (server component with session check).
 
 ---
 
-## Data Model Summary
-
-### Extended `Score` type
+## Extended `Score` type
 
 ```typescript
 export interface Score {
@@ -193,52 +264,42 @@ export interface Score {
   count: number | null
   mode: 'single' | 'streak'
   created_at: string
-  country?: string      // ISO 3166-1 alpha-2 or "Global"  ← new
-  userId?: string       // present when submitted by logged-in user  ← new
+  country?: string      // ISO 3166-1 alpha-2 or "Global"  ← new Phase 1
+  userId?: string       // present when submitted by logged-in user  ← new Phase 2
 }
 ```
-
-### Redis Keys — Full Picture
-
-| Key | Type | Description |
-|---|---|---|
-| `lb:single:*` | ZSET | Existing single leaderboards |
-| `lb:streak:*` | ZSET | Existing streak leaderboards |
-| `lb:stats:plays` | STRING | Global play counter |
-| `lb:country:*` | ZSET | Country leaderboards (Phase 1) |
-| `user:{id}` | HASH | User account (Phase 2) |
-| `user:email:{email}` | STRING | Email → userId (Phase 2) |
-| `user:username:{name}` | STRING | Username → userId (Phase 2) |
-| `scores:user:{userId}` | ZSET | Per-user score history (Phase 3) |
 
 ---
 
 ## Testing Requirements
 
-Each phase must pass tests before commit + deploy:
+Each phase must pass before commit + deploy:
 
 **Phase 1:**
-- Country detection returns correct code from Vercel header
-- Country leaderboard sorted correctly, TTLs set
-- Pipeline includes country ZINCRBY
+- Country detection returns correct code from Vercel header, falls back to "XX" correctly
+- Country leaderboard sorted correctly, TTLs set on weekly/daily keys
+- Redis pipeline includes `ZINCRBY` on all 3 country keys
 - Period filter (all/week/today) returns correct data
-- SSE pushes `country_updated` on score submit
+- SSE pushes `country_updated` event on score submit
 
 **Phase 2:**
-- Signup creates user, hashes password, sets reverse-lookup keys
+- Signup inserts user row, hashes password, enforces unique email + username
 - Duplicate email → 409 error
-- Duplicate username → 409 + 3 alternatives
-- Google OAuth creates user on first login, reuses on second
-- JWT session verified without Redis roundtrip
+- Duplicate username → 409 + 3 alternatives returned
+- Google OAuth creates user row on first login, reuses on second (same `googleId`)
+- JWT session verified without DB roundtrip
 - Login with wrong password → 401
+- Score submit with valid session writes row to `scores` table with correct `userId`
 
 **Phase 3:**
 - `/profile/[username]` returns 404 for unknown user
 - `/profile/me` redirects to correct username when logged in
 - `/profile/me` returns 401 when not logged in
-- History paginates correctly (20 items, cursor-based)
-- Settings: username change updates reverse-lookup keys atomically
-- Settings: delete account removes all user keys
+- Overview aggregates (bestTime, bestStreak, totalPlays) correct against seed data
+- History paginates correctly (20 items, cursor advances)
+- History mode filter returns only matching rows
+- Settings: username change updates `users.username`, rejects duplicate
+- Settings: delete account sets `scores.user_id = NULL`, removes `users` row
 
 ---
 
