@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { eq } from 'drizzle-orm'
 import { redis, weekKey, todayKey, countryAllKey, countryWeekKey, countryTodayKey } from '@/lib/redis'
 import { auth } from '@/auth'
 import { db } from '@/lib/db'
-import { scores as scoresTable } from '@/lib/schema'
+import { scores as scoresTable, users } from '@/lib/schema'
 
 const MIN_MS = 100
 const MAX_MS = 30_000
@@ -59,16 +60,32 @@ export async function POST(req: NextRequest) {
       ? rawCountry.toUpperCase()
       : 'XX'
 
-  if (typeof username !== 'string' || !USERNAME_RE.test(username.trim())) {
-    return NextResponse.json({ error: 'Invalid username' }, { status: 400, headers: SECURITY_HEADERS })
-  }
   if (mode !== 'single' && mode !== 'streak') {
     return NextResponse.json({ error: 'Invalid mode' }, { status: 400, headers: SECURITY_HEADERS })
   }
 
+  // Authenticated submissions: resolve canonical username from DB via session.user.id.
+  // Anonymous: validate and use the client-provided name.
+  let user: string
+  if (userId) {
+    const [dbUser] = await db
+      .select({ username: users.username })
+      .from(users)
+      .where(eq(users.id, userId))
+      .limit(1)
+    if (!dbUser) {
+      return NextResponse.json({ error: 'User not found' }, { status: 401, headers: SECURITY_HEADERS })
+    }
+    user = dbUser.username
+  } else {
+    if (typeof username !== 'string' || !USERNAME_RE.test(username.trim())) {
+      return NextResponse.json({ error: 'Invalid username' }, { status: 400, headers: SECURITY_HEADERS })
+    }
+    user = (username as string).trim()
+  }
+
   const now = new Date().toISOString()
   const id = crypto.randomUUID()
-  const user = (username as string).trim()
 
   if (mode === 'streak') {
     if (typeof count !== 'number' || !Number.isInteger(count) || count < 0 || count > MAX_COUNT) {
