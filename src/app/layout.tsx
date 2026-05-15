@@ -12,8 +12,10 @@ export const viewport: Viewport = {
 }
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://dabpose.fun'),
   title: 'Dab Pose — How Fast Can You Dab?',
   description: 'Test your dab reaction speed with real-time pose detection.',
+  alternates: { canonical: '/' },
   icons: { icon: '/title-web.png', shortcut: '/title-web.png' },
   manifest: '/manifest.json',
   openGraph: {
