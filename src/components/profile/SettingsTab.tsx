@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { signOut, useSession } from 'next-auth/react'
+import { COUNTRIES } from '@/lib/countries'
 
 async function patchSetting(field: string, value: string, currentPassword?: string) {
   const body: Record<string, string> = { field, value }
@@ -123,15 +124,28 @@ export default function SettingsTab({ username: initialUsername, country: initia
 
       <form onSubmit={handleCountryChange} className="space-y-3">
         <h3 className="text-white text-sm font-semibold">Change Country</h3>
-        <input
-          type="text"
-          placeholder="2-letter code (e.g. TH, US)"
-          value={country}
-          onChange={e => setCountry(e.target.value.toUpperCase().slice(0, 2))}
-          maxLength={2}
-          className={`${inputClass} uppercase`}
-        />
-        <button type="submit" disabled={loading} className={btnClass}>
+        <div className="relative">
+          <select
+            value={country}
+            onChange={e => setCountry(e.target.value)}
+            className={`${inputClass} appearance-none pr-10 cursor-pointer`}
+            aria-label="Country"
+          >
+            {COUNTRIES.map(c => (
+              <option key={c.code} value={c.code} className="bg-gray-900 text-white">
+                {c.flag}  {c.name}
+              </option>
+            ))}
+          </select>
+          <svg
+            className="absolute right-4 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-400 pointer-events-none"
+            viewBox="0 0 10 6"
+            fill="currentColor"
+          >
+            <path d="M0 0l5 6 5-6z" />
+          </svg>
+        </div>
+        <button type="submit" disabled={loading || country === initialCountry} className={btnClass}>
           Save country
         </button>
       </form>

@@ -1,23 +1,6 @@
 'use client'
 
-const COUNTRIES: Array<{ code: string; flag: string; name: string }> = [
-  { code: 'XX', flag: '🌍', name: 'Global' },
-  { code: 'TH', flag: '🇹🇭', name: 'Thailand' },
-  { code: 'US', flag: '🇺🇸', name: 'USA' },
-  { code: 'JP', flag: '🇯🇵', name: 'Japan' },
-  { code: 'GB', flag: '🇬🇧', name: 'UK' },
-  { code: 'DE', flag: '🇩🇪', name: 'Germany' },
-  { code: 'FR', flag: '🇫🇷', name: 'France' },
-  { code: 'KR', flag: '🇰🇷', name: 'Korea' },
-  { code: 'CN', flag: '🇨🇳', name: 'China' },
-  { code: 'AU', flag: '🇦🇺', name: 'Australia' },
-  { code: 'CA', flag: '🇨🇦', name: 'Canada' },
-  { code: 'BR', flag: '🇧🇷', name: 'Brazil' },
-  { code: 'IN', flag: '🇮🇳', name: 'India' },
-  { code: 'SG', flag: '🇸🇬', name: 'Singapore' },
-  { code: 'MX', flag: '🇲🇽', name: 'Mexico' },
-  { code: 'IT', flag: '🇮🇹', name: 'Italy' },
-]
+import { COUNTRIES, findCountry } from '@/lib/countries'
 
 export default function CountryChip({
   country,
@@ -26,7 +9,7 @@ export default function CountryChip({
   country: string
   onChange: (code: string) => void
 }) {
-  const current = COUNTRIES.find(c => c.code === country) ?? COUNTRIES[0]
+  const current = findCountry(country)
   return (
     <label className="relative inline-flex items-center cursor-pointer" title="Country for this score">
       <span aria-hidden className="pointer-events-none inline-flex items-center gap-1 bg-white/8 border border-white/15 hover:border-purple-500/50 rounded-lg px-2 py-1 text-sm leading-none text-white transition-colors">
