@@ -16,6 +16,18 @@ interface Props {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { username } = await params
+  const [user] = await db
+    .select({ id: users.id })
+    .from(users)
+    .where(eq(users.username, username))
+    .limit(1)
+  if (!user) {
+    return {
+      title: 'Player not found — Dab Pose',
+      description: 'This player does not have an account on Dab Pose.',
+      robots: { index: false, follow: false },
+    }
+  }
   return {
     title: `@${username} — Dab Pose`,
     description: `${username}'s profile, stats, and dab history on Dab Pose.`,
