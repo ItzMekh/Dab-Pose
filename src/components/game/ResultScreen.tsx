@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { useSession } from 'next-auth/react'
 import type { GameResult } from '@/types'
 import { submitScore, validateUsername, fetchLeaderboard } from '@/lib/api'
 import { useUsername } from '@/hooks/useUsername'
@@ -40,6 +41,9 @@ function formatTimeDisplay(ms: number): { primary: string; unit: string } {
 
 export default function ResultScreen({ result, onRetry, onExit }: Props) {
   const { username, setUsername, saveUsername } = useUsername()
+  const { data: session } = useSession()
+  const sessionName = session?.user?.name ?? null
+  const effectiveName = sessionName ?? username
   const country = useCountry()
   const [validationErr, setValidationErr] = useState<string | null>(null)
   const [submitted, setSubmitted] = useState(false)
@@ -67,15 +71,18 @@ export default function ResultScreen({ result, onRetry, onExit }: Props) {
   }, [result.time_ms])
 
   const handleSubmit = async () => {
-    const err = validateUsername(username)
-    if (err) { setValidationErr(err); return }
+    const nameToSubmit = effectiveName
+    if (!sessionName) {
+      const err = validateUsername(nameToSubmit)
+      if (err) { setValidationErr(err); return }
+    }
     setValidationErr(null)
     setSubmitErr(null)
     setSubmitting(true)
-    const res = await submitScore({ username: username.trim(), time_ms: result.time_ms, country })
+    const res = await submitScore({ username: nameToSubmit.trim(), time_ms: result.time_ms, country })
     setSubmitting(false)
     if (res.ok) {
-      saveUsername(username)
+      if (!sessionName) saveUsername(nameToSubmit)
       setPercentile(res.percentile ?? null)
       setIsKing(res.isKing ?? false)
       setSubmitted(true)
@@ -185,15 +192,22 @@ export default function ResultScreen({ result, onRetry, onExit }: Props) {
       {!submitted ? (
         <div className="space-y-2">
           <div className="flex gap-2">
-            <input
-              type="text"
-              placeholder="Your name"
-              value={username}
-              onChange={e => { setUsername(e.target.value); setValidationErr(null) }}
-              onKeyDown={e => e.key === 'Enter' && handleSubmit()}
-              maxLength={20}
-              className="flex-1 bg-white/8 border border-white/15 rounded-xl px-4 py-3 text-white placeholder-gray-400 outline-none focus:border-purple-500 transition-colors text-sm"
-            />
+            {sessionName ? (
+              <div className="flex-1 flex items-center gap-2 bg-white/8 border border-white/15 rounded-xl px-4 py-3 text-sm">
+                <span className="text-gray-500">Signed in as</span>
+                <span className="text-white font-semibold truncate">{sessionName}</span>
+              </div>
+            ) : (
+              <input
+                type="text"
+                placeholder="Your name"
+                value={username}
+                onChange={e => { setUsername(e.target.value); setValidationErr(null) }}
+                onKeyDown={e => e.key === 'Enter' && handleSubmit()}
+                maxLength={20}
+                className="flex-1 bg-white/8 border border-white/15 rounded-xl px-4 py-3 text-white placeholder-gray-400 outline-none focus:border-purple-500 transition-colors text-sm"
+              />
+            )}
             <button
               onClick={handleSubmit}
               disabled={submitting}
