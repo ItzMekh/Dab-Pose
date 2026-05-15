@@ -17,11 +17,16 @@ export async function GET(req: NextRequest) {
     else if (period === 'today') key = countryTodayKey()
     else key = countryAllKey()
 
-    const raw = await redis.zrange(key, 0, 49, { rev: true, withScores: true }) as Array<{ member: string; score: number }>
-    const entries = raw.map(({ member, score }) => ({
-      country: member,
-      totalDabs: Math.round(score),
-    }))
+    // withScores returns a flat [member, score, member, score, ...] array;
+    // with automaticDeserialization: false both come back as strings.
+    const raw = await redis.zrange(key, 0, 49, { rev: true, withScores: true }) as Array<string | number>
+    const entries: Array<{ country: string; totalDabs: number }> = []
+    for (let i = 0; i < raw.length; i += 2) {
+      entries.push({
+        country: String(raw[i]),
+        totalDabs: Math.round(Number(raw[i + 1])),
+      })
+    }
     return NextResponse.json(entries, { headers: CACHE_HEADERS })
   }
 
