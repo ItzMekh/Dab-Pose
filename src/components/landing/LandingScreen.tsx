@@ -7,6 +7,7 @@ import Link from 'next/link'
 import { useSession } from 'next-auth/react'
 import type { GameMode } from '@/types'
 import { useRealtimeVersion } from '@/hooks/useRealtimeVersion'
+import { bucketDabs } from '@/lib/format'
 import ProfileCard from './ProfileCard'
 import UsernameSetupModal from './UsernameSetupModal'
 
@@ -44,6 +45,7 @@ function formatPlays(n: number): string {
 export default function LandingScreen({ onStart }: Props) {
   const [selectedMode, setSelectedMode] = useState<GameMode>('single')
   const [totalPlays, setTotalPlays] = useState<number | null>(null)
+  const [totalDabs, setTotalDabs] = useState<number | null>(null)
   const statsRef = useRef<(() => void) | null>(null)
   const { data: session } = useSession()
 
@@ -51,7 +53,11 @@ export default function LandingScreen({ onStart }: Props) {
     const doFetch = () =>
       fetch('/api/stats', { cache: 'no-store' })
         .then(r => r.ok ? r.json() : null)
-        .then(d => { if (d && typeof d.totalPlays === 'number') setTotalPlays(d.totalPlays) })
+        .then(d => {
+          if (!d) return
+          if (typeof d.totalPlays === 'number') setTotalPlays(d.totalPlays)
+          if (typeof d.totalDabs === 'number') setTotalDabs(d.totalDabs)
+        })
         .catch(() => {})
     statsRef.current = doFetch
     doFetch()
@@ -107,7 +113,7 @@ export default function LandingScreen({ onStart }: Props) {
             transition={{ delay: 0.3 }}
             className="text-gray-400 text-base font-normal tracking-widest"
           >
-            {formatPlays(totalPlays)} DABS WORLDWIDE
+            {formatPlays(totalPlays)} PLAYS{totalDabs !== null && totalDabs > 0 && <> · {bucketDabs(totalDabs)} DABS</>}
           </motion.p>
         )}
       </motion.div>

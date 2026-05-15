@@ -2,10 +2,11 @@ import { NextResponse } from 'next/server'
 import { redis } from '@/lib/redis'
 
 export async function GET() {
-  const raw = await redis.get('lb:stats:plays') as string | number | null
-  const totalPlays = raw ? Number(raw) : 0
+  const [rawPlays, rawDabs] = (await redis.mget('lb:stats:plays', 'lb:stats:dabs')) as Array<string | number | null>
+  const totalPlays = rawPlays ? Number(rawPlays) : 0
+  const totalDabs = rawDabs ? Number(rawDabs) : 0
   return NextResponse.json(
-    { totalPlays },
+    { totalPlays, totalDabs },
     {
       headers: {
         'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=60',
