@@ -1,3 +1,4 @@
+import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { auth } from '@/auth'
 import { db } from '@/lib/db'
@@ -11,6 +12,19 @@ import SettingsTab from '@/components/profile/SettingsTab'
 interface Props {
   params: Promise<{ username: string }>
   searchParams: Promise<{ tab?: string }>
+}
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { username } = await params
+  return {
+    title: `@${username} — Dab Pose`,
+    description: `${username}'s profile, stats, and dab history on Dab Pose.`,
+    openGraph: {
+      title: `@${username} — Dab Pose`,
+      description: `${username}'s profile, stats, and dab history.`,
+      url: `https://dabpose.fun/profile/${username}`,
+    },
+  }
 }
 
 export default async function ProfilePage({ params, searchParams }: Props) {

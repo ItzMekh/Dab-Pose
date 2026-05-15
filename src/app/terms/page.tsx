@@ -60,7 +60,16 @@ export default function TermsPage() {
         </section>
 
         <section className="space-y-3">
-          <h2 className="text-white font-bold text-xl">4. Camera access</h2>
+          <h2 className="text-white font-bold text-xl">4. Accounts</h2>
+          <p className="text-sm leading-relaxed">
+            Creating an account is optional — you can submit scores anonymously. If you sign up, you must provide a valid email so we can identify the account in case of a deletion request. You may change your username once every 24 hours and your country at any time from your profile&apos;s Settings tab. You may request deletion of your account and all associated data at any time; see the{' '}
+            <Link href="/privacy" className="text-purple-400 hover:text-purple-300 transition-colors">Privacy Policy</Link>
+            {' '}for the contact procedure.
+          </p>
+        </section>
+
+        <section className="space-y-3">
+          <h2 className="text-white font-bold text-xl">5. Camera access</h2>
           <p className="text-sm leading-relaxed">
             The game requires webcam access to detect your pose. All processing happens locally in your browser.
             No video is recorded, transmitted, or stored. See our{' '}
@@ -72,7 +81,7 @@ export default function TermsPage() {
         </section>
 
         <section className="space-y-3">
-          <h2 className="text-white font-bold text-xl">5. Disclaimer</h2>
+          <h2 className="text-white font-bold text-xl">6. Disclaimer</h2>
           <p className="text-sm leading-relaxed">
             Dab Pose is provided &quot;as is&quot; without warranties of any kind. We are not responsible for any
             injuries sustained while playing (please dab responsibly), data loss, or service interruptions.
@@ -80,7 +89,7 @@ export default function TermsPage() {
         </section>
 
         <section className="space-y-3">
-          <h2 className="text-white font-bold text-xl">6. Changes</h2>
+          <h2 className="text-white font-bold text-xl">7. Changes</h2>
           <p className="text-sm leading-relaxed">
             We may update these terms at any time. Continued use of the site constitutes acceptance of the updated terms.
           </p>

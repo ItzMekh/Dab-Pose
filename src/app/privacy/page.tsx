@@ -43,9 +43,29 @@ export default function PrivacyPage() {
         <section className="space-y-3">
           <h2 className="text-white font-bold text-xl">What we collect</h2>
           <ul className="space-y-2 text-sm leading-relaxed list-disc list-inside">
-            <li><strong className="text-white">Scores &amp; usernames</strong> — when you submit a score, your chosen username and result (reaction time or dab count) are stored in our database.</li>
-            <li><strong className="text-white">No personal identification</strong> — we do not collect your name, email, IP address (beyond ephemeral rate limiting), or any account information.</li>
-            <li><strong className="text-white">Local storage</strong> — your username is saved in your browser&apos;s localStorage so you don&apos;t have to retype it. It stays on your device.</li>
+            <li><strong className="text-white">Scores &amp; usernames</strong> — every submitted score is stored with the username you chose, the result (reaction time or dab count), the country you selected, and a timestamp.</li>
+            <li><strong className="text-white">Account data (if you sign in)</strong> — when you create an account we store your email, a bcrypt hash of your password (never the plaintext), your username, and an optional country preference. If you sign in with Google we store your Google account ID and your Google profile name / avatar URL.</li>
+            <li><strong className="text-white">Session cookie</strong> — we use a single signed Auth.js session cookie to keep you signed in. It contains your user ID and username, not your password.</li>
+            <li><strong className="text-white">Ephemeral IP</strong> — the IP address of each /api/score request is held in memory for rate limiting only (10 submissions per minute) and is discarded within a minute. We never persist it.</li>
+            <li><strong className="text-white">Local storage</strong> — your last-used username and country selection are saved in your browser&apos;s localStorage so you don&apos;t have to retype them. They never leave your device unless you submit a score.</li>
+          </ul>
+        </section>
+
+        <section className="space-y-3">
+          <h2 className="text-white font-bold text-xl">What we do NOT collect</h2>
+          <ul className="space-y-2 text-sm leading-relaxed list-disc list-inside">
+            <li>No video, images, or camera frames — pose detection happens entirely in your browser.</li>
+            <li>No analytics, tracking pixels, ad-network beacons, fingerprinting, or third-party cookies.</li>
+            <li>No real name, phone number, address, or payment information.</li>
+          </ul>
+        </section>
+
+        <section className="space-y-3">
+          <h2 className="text-white font-bold text-xl">Your rights</h2>
+          <ul className="space-y-2 text-sm leading-relaxed list-disc list-inside">
+            <li><strong className="text-white">Change your username</strong> — once per 24 hours from your profile&apos;s Settings tab. Old usernames on the leaderboard are automatically rewritten.</li>
+            <li><strong className="text-white">Change your country</strong> — anytime from Settings. Future scores use the new selection.</li>
+            <li><strong className="text-white">Delete your data</strong> — email <a href="mailto:pupha.mekh@gmail.com" className="text-purple-400 hover:text-purple-300 transition-colors">pupha.mekh@gmail.com</a> with the username on your account and we will delete your account, your scores, and your leaderboard entries.</li>
           </ul>
         </section>
 
@@ -72,8 +92,10 @@ export default function PrivacyPage() {
         <section className="space-y-3">
           <h2 className="text-white font-bold text-xl">Third-party services</h2>
           <ul className="space-y-2 text-sm leading-relaxed list-disc list-inside">
-            <li><strong className="text-white">Upstash Redis</strong> — stores leaderboard scores. Subject to Upstash&apos;s privacy policy.</li>
-            <li><strong className="text-white">Vercel</strong> — hosts the application. Subject to Vercel&apos;s privacy policy.</li>
+            <li><strong className="text-white">Upstash Redis</strong> — stores leaderboard sorted sets and the play/dab counters. Subject to Upstash&apos;s privacy policy.</li>
+            <li><strong className="text-white">Vercel Postgres / Neon</strong> — stores user accounts and per-play score history. Subject to the provider&apos;s privacy policy.</li>
+            <li><strong className="text-white">Vercel</strong> — hosts the application and processes /api/* requests. Subject to Vercel&apos;s privacy policy.</li>
+            <li><strong className="text-white">Google Sign-In</strong> — optional. If used, Google shares your email, name, profile picture, and Google account ID with us. Subject to Google&apos;s privacy policy.</li>
             <li><strong className="text-white">jsDelivr CDN</strong> — serves the MediaPipe WASM model files. No user data is shared.</li>
           </ul>
         </section>
@@ -81,7 +103,7 @@ export default function PrivacyPage() {
         <section className="space-y-3">
           <h2 className="text-white font-bold text-xl">Cookies &amp; analytics</h2>
           <p className="text-sm leading-relaxed">
-            We do not use cookies or analytics tracking of any kind. There are no ad networks or tracking pixels on this site.
+            The only cookie we set is the Auth.js session cookie when you sign in. No analytics, no tracking pixels, no ad networks. If you never sign in, the site sets no cookies at all.
           </p>
         </section>
 
