@@ -54,6 +54,8 @@ tests/
 # AI / agent context files
 CLAUDE.md
 SKILL.md
+TASK_TRACKER.md
+IDEA_BACKLOG.md
 
 .obsidian/
 .playwright-mcp/
