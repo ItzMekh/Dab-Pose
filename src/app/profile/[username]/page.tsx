@@ -26,7 +26,7 @@ export default async function ProfilePage({ params, searchParams }: Props) {
   if (!user) notFound()
 
   const session = await auth()
-  const isOwner = session?.user?.name === username
+  const isOwner = !!session?.user?.id && session.user.id === user.id
 
   const [stats] = await db
     .select({

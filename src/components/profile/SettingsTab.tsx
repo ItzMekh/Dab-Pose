@@ -48,7 +48,7 @@ export default function SettingsTab({ username: initialUsername, country: initia
     } else {
       setMessage('ok', 'Username updated')
       await update()
-      router.push(`/profile/${data.username}`)
+      window.location.href = `/profile/${data.username}?tab=settings`
     }
   }
 

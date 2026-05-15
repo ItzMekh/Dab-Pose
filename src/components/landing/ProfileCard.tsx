@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { useSession } from 'next-auth/react'
 
 const FLAG: Record<string, string> = {
   TH: '🇹🇭', US: '🇺🇸', JP: '🇯🇵', GB: '🇬🇧', DE: '🇩🇪',
@@ -28,19 +29,27 @@ interface Props {
 }
 
 export default function ProfileCard({ username, avatarUrl }: Props) {
+  const { update } = useSession()
   const [country, setCountry] = useState<string | null>(null)
   const [totalPlays, setTotalPlays] = useState<number | null>(null)
 
   useEffect(() => {
     fetch(`/api/profile/${username}`, { cache: 'no-store' })
-      .then(r => r.ok ? r.json() : null)
+      .then(r => {
+        if (r.status === 404) {
+          // JWT username stale (e.g. after rename) — refresh session from DB
+          update()
+          return null
+        }
+        return r.ok ? r.json() : null
+      })
       .then(d => {
         if (!d) return
         if (d.user?.country) setCountry(d.user.country)
         if (typeof d.stats?.totalPlays === 'number') setTotalPlays(d.stats.totalPlays)
       })
       .catch(() => {})
-  }, [username])
+  }, [username, update])
 
   const grad = GRAD[username.charCodeAt(0) % GRAD.length]
   const flag = country && country !== 'XX' ? (FLAG[country] ?? '🌍') : null
