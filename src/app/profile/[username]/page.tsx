@@ -50,6 +50,7 @@ export default async function ProfilePage({ params, searchParams }: Props) {
             username={user.username}
             country={user.country}
             hasPassword={!!user.passwordHash}
+            usernameChangedAt={user.usernameChangedAt?.toISOString() ?? null}
           />
         )}
         {tab === 'settings' && !isOwner && (

@@ -1,14 +1,15 @@
 import { pgTable, uuid, text, char, timestamp, integer, index } from 'drizzle-orm/pg-core'
 
 export const users = pgTable('users', {
-  id:           uuid('id').primaryKey().defaultRandom(),
-  email:        text('email').unique().notNull(),
-  username:     text('username').unique().notNull(),
-  passwordHash: text('password_hash'),
-  googleId:     text('google_id').unique(),
-  avatarUrl:    text('avatar_url'),
-  country:      char('country', { length: 2 }).notNull().default('XX'),
-  createdAt:    timestamp('created_at').defaultNow(),
+  id:                 uuid('id').primaryKey().defaultRandom(),
+  email:              text('email').unique().notNull(),
+  username:           text('username').unique().notNull(),
+  passwordHash:       text('password_hash'),
+  googleId:           text('google_id').unique(),
+  avatarUrl:          text('avatar_url'),
+  country:            char('country', { length: 2 }).notNull().default('XX'),
+  createdAt:          timestamp('created_at').defaultNow(),
+  usernameChangedAt:  timestamp('username_changed_at'),
 })
 
 export const scores = pgTable('scores', {

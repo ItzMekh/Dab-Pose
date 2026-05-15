@@ -2,11 +2,13 @@ import { type NextRequest, NextResponse } from 'next/server'
 import { hash, compare } from 'bcryptjs'
 import { auth } from '@/auth'
 import { db } from '@/lib/db'
-import { users } from '@/lib/schema'
+import { users, scores } from '@/lib/schema'
 import { eq } from 'drizzle-orm'
+import { rewriteLeaderboardUsername } from '@/lib/rename-leaderboard'
 
 const USERNAME_RE = /^[a-zA-Z0-9_]{3,20}$/
 const COUNTRY_RE = /^[A-Z]{2}$/
+const RENAME_COOLDOWN_MS = 24 * 60 * 60 * 1000 // 1 day
 
 function suggestUsernames(base: string): string[] {
   const b = base.slice(0, 17)
@@ -39,6 +41,34 @@ export async function PATCH(req: NextRequest) {
         { status: 400 }
       )
     }
+
+    const [me] = await db
+      .select({ username: users.username, usernameChangedAt: users.usernameChangedAt })
+      .from(users)
+      .where(eq(users.id, session.user.id))
+      .limit(1)
+    if (!me) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 })
+    }
+
+    // No-op rename: same as current username — accept silently
+    if (me.username === value) {
+      return NextResponse.json({ ok: true, username: value, noop: true })
+    }
+
+    // Rate limit: 1 rename per 24h after the first change
+    if (me.usernameChangedAt) {
+      const elapsed = Date.now() - me.usernameChangedAt.getTime()
+      if (elapsed < RENAME_COOLDOWN_MS) {
+        const nextChangeAt = new Date(me.usernameChangedAt.getTime() + RENAME_COOLDOWN_MS).toISOString()
+        const retryAfterSec = Math.ceil((RENAME_COOLDOWN_MS - elapsed) / 1000)
+        return NextResponse.json(
+          { error: 'Username can be changed once per day', nextChangeAt, retryAfterSec },
+          { status: 429, headers: { 'Retry-After': String(retryAfterSec) } }
+        )
+      }
+    }
+
     const [existing] = await db
       .select({ id: users.id })
       .from(users)
@@ -50,8 +80,26 @@ export async function PATCH(req: NextRequest) {
         { status: 409 }
       )
     }
-    await db.update(users).set({ username: value }).where(eq(users.id, session.user.id))
-    return NextResponse.json({ ok: true, username: value })
+
+    // 1) Update DB users + scores
+    await db
+      .update(users)
+      .set({ username: value, usernameChangedAt: new Date() })
+      .where(eq(users.id, session.user.id))
+    await db
+      .update(scores)
+      .set({ username: value })
+      .where(eq(scores.userId, session.user.id))
+
+    // 2) Rewrite Redis leaderboard member snapshots (best-effort — DB is source of truth)
+    let leaderboard = { scanned: 0, rewritten: 0 }
+    try {
+      leaderboard = await rewriteLeaderboardUsername(session.user.id, me.username, value)
+    } catch (err) {
+      console.error('[settings] leaderboard rewrite failed:', err)
+    }
+
+    return NextResponse.json({ ok: true, username: value, leaderboard })
   }
 
   if (field === 'country') {

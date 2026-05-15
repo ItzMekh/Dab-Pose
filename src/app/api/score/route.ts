@@ -96,7 +96,7 @@ export async function POST(req: NextRequest) {
         ? time_ms
         : null
 
-    const member = JSON.stringify({ id, username: user, count, time_ms: bestMs, mode: 'streak', created_at: now, country })
+    const member = JSON.stringify({ id, userId, username: user, count, time_ms: bestMs, mode: 'streak', created_at: now, country })
     const allKey = 'lb:streak:all'
     const wKey = `lb:streak:week:${weekKey()}`
     const tKey = `lb:streak:today:${todayKey()}`
@@ -152,7 +152,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid time_ms' }, { status: 400, headers: SECURITY_HEADERS })
   }
 
-  const member = JSON.stringify({ id, username: user, time_ms, count: null, mode: 'single', created_at: now, country })
+  const member = JSON.stringify({ id, userId, username: user, time_ms, count: null, mode: 'single', created_at: now, country })
   const allKey = 'lb:single:all'
   const wKey = `lb:single:week:${weekKey()}`
   const tKey = `lb:single:today:${todayKey()}`

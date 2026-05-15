@@ -1,9 +1,21 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { signOut, useSession } from 'next-auth/react'
 import { COUNTRIES } from '@/lib/countries'
+
+const RENAME_COOLDOWN_MS = 24 * 60 * 60 * 1000
+
+function formatRemaining(ms: number): string {
+  if (ms <= 0) return ''
+  const totalSec = Math.ceil(ms / 1000)
+  const h = Math.floor(totalSec / 3600)
+  const m = Math.floor((totalSec % 3600) / 60)
+  if (h > 0) return `${h}h ${m}m`
+  if (m > 0) return `${m}m`
+  return `${totalSec}s`
+}
 
 async function patchSetting(field: string, value: string, currentPassword?: string) {
   const body: Record<string, string> = { field, value }
@@ -19,9 +31,10 @@ interface Props {
   username: string
   country: string
   hasPassword: boolean
+  usernameChangedAt: string | null
 }
 
-export default function SettingsTab({ username: initialUsername, country: initialCountry, hasPassword }: Props) {
+export default function SettingsTab({ username: initialUsername, country: initialCountry, hasPassword, usernameChangedAt }: Props) {
   const router = useRouter()
   const { update } = useSession()
   const [username, setUsername] = useState(initialUsername)
@@ -32,6 +45,23 @@ export default function SettingsTab({ username: initialUsername, country: initia
   const [msg, setMsg] = useState<{ type: 'ok' | 'err'; text: string } | null>(null)
   const [loading, setLoading] = useState(false)
   const [deleteConfirm, setDeleteConfirm] = useState(false)
+  const [nextChangeAt, setNextChangeAt] = useState<string | null>(
+    usernameChangedAt
+      ? new Date(new Date(usernameChangedAt).getTime() + RENAME_COOLDOWN_MS).toISOString()
+      : null,
+  )
+  const [now, setNow] = useState(() => Date.now())
+
+  useEffect(() => {
+    if (!nextChangeAt) return
+    const id = setInterval(() => setNow(Date.now()), 30_000)
+    return () => clearInterval(id)
+  }, [nextChangeAt])
+
+  const cooldownRemainingMs = nextChangeAt
+    ? new Date(nextChangeAt).getTime() - now
+    : 0
+  const cooldownActive = cooldownRemainingMs > 0
 
   function setMessage(type: 'ok' | 'err', text: string) {
     setMsg({ type, text })
@@ -45,12 +75,16 @@ export default function SettingsTab({ username: initialUsername, country: initia
     const data = await res.json()
     setLoading(false)
     if (!res.ok) {
+      if (res.status === 429 && data.nextChangeAt) {
+        setNextChangeAt(data.nextChangeAt)
+      }
       setMessage('err', data.error ?? 'Failed')
-    } else {
-      setMessage('ok', 'Username updated')
-      await update()
-      window.location.href = `/profile/${data.username}?tab=settings`
+      return
     }
+    setMessage('ok', 'Username updated')
+    setNextChangeAt(new Date(Date.now() + RENAME_COOLDOWN_MS).toISOString())
+    await update()
+    window.location.href = `/profile/${data.username}?tab=settings`
   }
 
   async function handleCountryChange(e: React.FormEvent) {
@@ -115,9 +149,19 @@ export default function SettingsTab({ username: initialUsername, country: initia
           type="text"
           value={username}
           onChange={e => setUsername(e.target.value)}
-          className={inputClass}
+          disabled={cooldownActive}
+          className={`${inputClass} disabled:opacity-60 disabled:cursor-not-allowed`}
         />
-        <button type="submit" disabled={loading || username === initialUsername} className={btnClass}>
+        <p className="text-gray-500 text-xs">
+          {cooldownActive
+            ? `Available in ${formatRemaining(cooldownRemainingMs)}.`
+            : 'You can change your username once every 24 hours.'}
+        </p>
+        <button
+          type="submit"
+          disabled={loading || cooldownActive || username === initialUsername}
+          className={btnClass}
+        >
           Save username
         </button>
       </form>
