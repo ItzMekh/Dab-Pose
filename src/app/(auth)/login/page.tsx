@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { signIn } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import GlobalCounter from '@/components/ui/GlobalCounter'
+import AuthBrandPanel from '@/components/auth/AuthBrandPanel'
 
 function GoogleIcon() {
   return (
@@ -39,27 +39,17 @@ export default function LoginPage() {
 
   return (
     <div className="flex min-h-screen">
-      {/* Left panel — branding + counter */}
-      <div className="hidden lg:flex flex-col justify-center items-center w-1/2 bg-black border-r border-white/5 p-12 gap-10">
-        <div className="text-center space-y-3">
-          <h1 className="text-6xl font-black tracking-tight">
-            <span className="text-white">DAB</span>
-            <span className="text-purple-400"> POSE</span>
-          </h1>
-          <p className="text-gray-400 text-xl">How fast can you dab?</p>
-        </div>
-        <GlobalCounter />
-      </div>
+      <AuthBrandPanel />
 
       {/* Right panel — form */}
       <div className="flex flex-col justify-center items-center w-full lg:w-1/2 bg-black p-8">
         <div className="w-full max-w-sm space-y-6">
           <div>
-            <h2 className="text-2xl font-bold text-white">Sign in</h2>
+            <h2 className="text-2xl font-bold text-white">Welcome back</h2>
             <p className="text-gray-500 text-sm mt-1">
-              No account?{' '}
+              First time?{' '}
               <Link href="/signup" className="text-purple-400 hover:text-purple-300 transition-colors">
-                Create one
+                Create an account
               </Link>
             </p>
           </div>
@@ -103,13 +93,12 @@ export default function LoginPage() {
               disabled={loading}
               className="w-full bg-purple-600 hover:bg-purple-500 disabled:opacity-50 text-white font-bold py-3 rounded-xl transition-colors"
             >
-              {loading ? 'Signing in…' : 'Sign in'}
+              {loading ? 'Signing in…' : "Let's dab"}
             </button>
           </form>
 
           <p className="text-center text-gray-600 text-xs">
-            Forgot password?{' '}
-            <span className="text-gray-500 cursor-default">Contact support</span>
+            Forgot password? <span className="text-gray-500">Sign in with Google instead</span>
           </p>
         </div>
       </div>

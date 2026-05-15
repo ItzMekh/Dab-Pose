@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { signIn } from 'next-auth/react'
 import Link from 'next/link'
-import GlobalCounter from '@/components/ui/GlobalCounter'
+import AuthBrandPanel from '@/components/auth/AuthBrandPanel'
 
 function GoogleIcon() {
   return (
@@ -50,25 +50,15 @@ export default function SignupPage() {
 
   return (
     <div className="flex min-h-screen">
-      {/* Left panel */}
-      <div className="hidden lg:flex flex-col justify-center items-center w-1/2 bg-black border-r border-white/5 p-12 gap-10">
-        <div className="text-center space-y-3">
-          <h1 className="text-6xl font-black tracking-tight">
-            <span className="text-white">DAB</span>
-            <span className="text-purple-400"> POSE</span>
-          </h1>
-          <p className="text-gray-400 text-xl">How fast can you dab?</p>
-        </div>
-        <GlobalCounter />
-      </div>
+      <AuthBrandPanel />
 
       {/* Right panel */}
       <div className="flex flex-col justify-center items-center w-full lg:w-1/2 bg-black p-8">
         <div className="w-full max-w-sm space-y-6">
           <div>
-            <h2 className="text-2xl font-bold text-white">Create account</h2>
+            <h2 className="text-2xl font-bold text-white">Join the dab squad</h2>
             <p className="text-gray-500 text-sm mt-1">
-              Already have one?{' '}
+              Got an account?{' '}
               <Link href="/login" className="text-purple-400 hover:text-purple-300 transition-colors">
                 Sign in
               </Link>
@@ -93,7 +83,7 @@ export default function SignupPage() {
             <div>
               <input
                 type="text"
-                placeholder="Username (3–20 chars, letters/numbers/_)"
+                placeholder="Pick a username (3–20 chars)"
                 value={username}
                 onChange={e => setUsername(e.target.value)}
                 required
@@ -149,9 +139,16 @@ export default function SignupPage() {
               disabled={loading}
               className="w-full bg-purple-600 hover:bg-purple-500 disabled:opacity-50 text-white font-bold py-3 rounded-xl transition-colors"
             >
-              {loading ? 'Creating account…' : 'Create account'}
+              {loading ? 'Creating account…' : "Let's dab"}
             </button>
           </form>
+
+          <p className="text-center text-gray-600 text-xs">
+            By signing up, you agree to our{' '}
+            <Link href="/terms" className="text-gray-500 hover:text-gray-400 transition-colors underline">Terms</Link>
+            {' '}and{' '}
+            <Link href="/privacy" className="text-gray-500 hover:text-gray-400 transition-colors underline">Privacy</Link>
+          </p>
         </div>
       </div>
     </div>
