@@ -48,7 +48,7 @@ export default function Leaderboard() {
   const [retry, setRetry] = useState(0)
   const [visible, setVisible] = useState(PAGE)
   const fetchRef = useRef<(() => void) | null>(null)
-  const detectedCountry = useCountry()
+  const [detectedCountry] = useCountry()
 
   useEffect(() => {
     if (tab === 'country') return

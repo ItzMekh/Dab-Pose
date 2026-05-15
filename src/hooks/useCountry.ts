@@ -1,22 +1,27 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 
-export function useCountry(): string {
-  const [country, setCountry] = useState('XX')
+export function useCountry(): [string, (code: string) => void] {
+  const [country, setCountryState] = useState('XX')
 
   useEffect(() => {
     const cached = sessionStorage.getItem('dab_country')
-    if (cached) { setCountry(cached); return }
+    if (cached) { setCountryState(cached); return }
     fetch('/api/country/detect')
       .then(r => r.ok ? r.json() : null)
       .then(d => {
         const code = (d?.country as string) ?? 'XX'
         sessionStorage.setItem('dab_country', code)
-        setCountry(code)
+        setCountryState(code)
       })
       .catch(() => {})
   }, [])
 
-  return country
+  const setCountry = useCallback((code: string) => {
+    sessionStorage.setItem('dab_country', code)
+    setCountryState(code)
+  }, [])
+
+  return [country, setCountry]
 }

@@ -8,6 +8,7 @@ import { submitScore, validateUsername, fetchLeaderboard } from '@/lib/api'
 import { useUsername } from '@/hooks/useUsername'
 import { useStableKeyboardShortcuts } from '@/hooks/useStableKeyboardShortcuts'
 import { useCountry } from '@/hooks/useCountry'
+import CountryChip from './CountryChip'
 
 interface Props {
   result: GameResult
@@ -43,8 +44,9 @@ export default function ResultScreen({ result, onRetry, onExit }: Props) {
   const { username, setUsername, saveUsername } = useUsername()
   const { data: session } = useSession()
   const sessionName = session?.user?.name ?? null
-  const effectiveName = sessionName ?? username
-  const country = useCountry()
+  const [canonicalName, setCanonicalName] = useState<string | null>(null)
+  const effectiveName = canonicalName ?? sessionName ?? username
+  const [country, setCountry] = useCountry()
   const [validationErr, setValidationErr] = useState<string | null>(null)
   const [submitted, setSubmitted] = useState(false)
   const [submitting, setSubmitting] = useState(false)
@@ -69,6 +71,19 @@ export default function ResultScreen({ result, onRetry, onExit }: Props) {
       })
       .catch(() => { /* rank preview unavailable — silent degradation */ })
   }, [result.time_ms])
+
+  // Signed-in: resolve canonical username + saved profile country from DB
+  useEffect(() => {
+    if (!sessionName) return
+    fetch('/api/profile/me', { cache: 'no-store' })
+      .then(r => r.ok ? r.json() : null)
+      .then(d => {
+        if (!d?.user) return
+        setCanonicalName(d.user.username)
+        if (d.user.country && d.user.country !== 'XX') setCountry(d.user.country)
+      })
+      .catch(() => {})
+  }, [sessionName, setCountry])
 
   const handleSubmit = async () => {
     const nameToSubmit = effectiveName
@@ -193,20 +208,24 @@ export default function ResultScreen({ result, onRetry, onExit }: Props) {
         <div className="space-y-2">
           <div className="flex gap-2">
             {sessionName ? (
-              <div className="flex-1 flex items-center gap-2 bg-white/8 border border-white/15 rounded-xl px-4 py-3 text-sm">
-                <span className="text-gray-500">Signed in as</span>
-                <span className="text-white font-semibold truncate">{sessionName}</span>
+              <div className="flex-1 flex items-center gap-2 bg-white/8 border border-white/15 rounded-xl px-3 py-2 text-sm">
+                <span className="text-gray-500 shrink-0">Signed in as</span>
+                <span className="text-white font-semibold truncate flex-1 min-w-0">{effectiveName}</span>
+                <CountryChip country={country} onChange={setCountry} />
               </div>
             ) : (
-              <input
-                type="text"
-                placeholder="Your name"
-                value={username}
-                onChange={e => { setUsername(e.target.value); setValidationErr(null) }}
-                onKeyDown={e => e.key === 'Enter' && handleSubmit()}
-                maxLength={20}
-                className="flex-1 bg-white/8 border border-white/15 rounded-xl px-4 py-3 text-white placeholder-gray-400 outline-none focus:border-purple-500 transition-colors text-sm"
-              />
+              <div className="flex-1 flex items-center gap-2 bg-white/8 border border-white/15 rounded-xl pl-4 pr-2 py-1 focus-within:border-purple-500 transition-colors">
+                <input
+                  type="text"
+                  placeholder="Your name"
+                  value={username}
+                  onChange={e => { setUsername(e.target.value); setValidationErr(null) }}
+                  onKeyDown={e => e.key === 'Enter' && handleSubmit()}
+                  maxLength={20}
+                  className="flex-1 bg-transparent text-white placeholder-gray-400 outline-none text-sm py-1.5 min-w-0"
+                />
+                <CountryChip country={country} onChange={setCountry} />
+              </div>
             )}
             <button
               onClick={handleSubmit}
