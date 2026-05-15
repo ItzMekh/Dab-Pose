@@ -33,11 +33,11 @@ export default function GlobalCounter() {
   if (totalPlays === null || totalPlays === 0) return null
 
   return (
-    <div className="text-center">
-      <p className="text-4xl font-black text-purple-400">{fmt(totalPlays)}</p>
-      <p className="text-gray-500 text-sm tracking-widest mt-1">
+    <p className="flex items-baseline justify-center gap-2 text-gray-500 text-sm tracking-widest">
+      <span className="text-purple-400 font-black text-lg">{fmt(totalPlays)}</span>
+      <span>
         PLAYS{totalDabs !== null && totalDabs > 0 && <> · {fmt(totalDabs)} DABS</>}
-      </p>
-    </div>
+      </span>
+    </p>
   )
 }
