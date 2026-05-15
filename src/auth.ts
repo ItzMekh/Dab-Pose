@@ -77,7 +77,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             .from(users)
             .where(eq(users.id, token.id as string))
             .limit(1)
-          if (dbUser) token.username = dbUser.username
+          if (dbUser) {
+            token.username = dbUser.username
+            token.dbCheckedAt = Date.now()
+          }
         } catch (err) {
           console.error('[auth] session update DB error:', err)
         }
@@ -85,6 +88,27 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           token.needsUsernameSetup = false
         }
       }
+
+      // Background sync — re-pull username from DB at most once every STALE_MS.
+      // Skip during sign-in (user/account/profile present) and explicit update (handled above).
+      const STALE_MS = 5_000
+      if (token.id && !user && !account && !profile && trigger !== 'update') {
+        const last = (token.dbCheckedAt as number | undefined) ?? 0
+        if (Date.now() - last > STALE_MS) {
+          try {
+            const [dbUser] = await db
+              .select({ username: users.username })
+              .from(users)
+              .where(eq(users.id, token.id as string))
+              .limit(1)
+            if (dbUser) token.username = dbUser.username
+          } catch (err) {
+            console.error('[auth] background sync DB error:', err)
+          }
+          token.dbCheckedAt = Date.now()
+        }
+      }
+
       return token
     },
     async session({ session, token }) {
