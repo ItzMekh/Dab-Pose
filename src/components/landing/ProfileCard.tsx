@@ -30,28 +30,26 @@ interface Props {
 
 export default function ProfileCard({ username, avatarUrl }: Props) {
   const { update } = useSession()
+  const [canonicalUsername, setCanonicalUsername] = useState<string | null>(null)
   const [country, setCountry] = useState<string | null>(null)
   const [totalPlays, setTotalPlays] = useState<number | null>(null)
 
   useEffect(() => {
-    fetch(`/api/profile/${username}`, { cache: 'no-store' })
-      .then(r => {
-        if (r.status === 404) {
-          // JWT username stale (e.g. after rename) — refresh session from DB
-          update()
-          return null
-        }
-        return r.ok ? r.json() : null
-      })
+    fetch('/api/profile/me', { cache: 'no-store' })
+      .then(r => r.ok ? r.json() : null)
       .then(d => {
-        if (!d) return
-        if (d.user?.country) setCountry(d.user.country)
+        if (!d?.user) return
+        setCanonicalUsername(d.user.username)
+        if (d.user.country) setCountry(d.user.country)
         if (typeof d.stats?.totalPlays === 'number') setTotalPlays(d.stats.totalPlays)
+        // Sync JWT if DB username drifted from the prop sourced from session
+        if (d.user.username !== username) update()
       })
       .catch(() => {})
   }, [username, update])
 
-  const grad = GRAD[username.charCodeAt(0) % GRAD.length]
+  const displayName = canonicalUsername ?? username
+  const grad = GRAD[displayName.charCodeAt(0) % GRAD.length]
   const flag = country && country !== 'XX' ? (FLAG[country] ?? '🌍') : null
 
   return (
@@ -62,19 +60,19 @@ export default function ProfileCard({ username, avatarUrl }: Props) {
             // eslint-disable-next-line @next/next/no-img-element
             <img
               src={avatarUrl}
-              alt={username}
+              alt={displayName}
               className="w-12 h-12 rounded-full object-cover"
             />
           ) : (
             <div className={`w-12 h-12 rounded-full bg-gradient-to-br ${grad} flex items-center justify-center text-white font-black text-base`}>
-              {username[0].toUpperCase()}
+              {displayName[0].toUpperCase()}
             </div>
           )}
           <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-400 border-2 border-black rounded-full" />
         </div>
 
         <p className="text-white text-xs font-bold truncate w-full text-center leading-tight">
-          {username}
+          {displayName}
         </p>
 
         <p className="text-gray-500 text-[10px] leading-tight text-center">
