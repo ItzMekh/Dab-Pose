@@ -40,3 +40,5 @@ DevSquad task log. Updated by all agents on assign / start / complete.
 - [x] Push round 4 — `c4378ed..95fa9b8` (3 commits) + `vercel --prod` deploys
 - [x] Prod re-verify after each round — /profile/me redirect, JWT auto-refresh post-reload, cookie persists across multi-nav, post-STALE_MS gap stays canonical, console clean — owner: [QA]
 - [x] Memory updates: bugs_auth_profile (Bug 6 fixed), cleanup_script_pattern, jwt_throttled_db_sync; MEMORY.md index — owner: [PM]
+- [x] Snapshot DevSquad workspace files — commit `8708967` + push (FF after clearing skip-worktree, re-flagged after) — owner: [PM]
+- [x] End-to-end rename test on prod — PATCH FAKEit3→FAKEit4 via /api/profile/settings, session auto-refreshes within 12s of the new auth() call (5s STALE_MS + nav latency), /profile/me + ProfileCard + landing all reflect FAKEit4; rollback FAKEit4→FAKEit3 syncs back equally fast. No client `update()` required. — owner: [QA]
