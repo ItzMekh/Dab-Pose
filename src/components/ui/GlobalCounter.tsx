@@ -2,9 +2,8 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { useRealtimeVersion } from '@/hooks/useRealtimeVersion'
-import { bucketDabs } from '@/lib/format'
 
-function formatPlays(n: number): string {
+function fmt(n: number): string {
   return n.toLocaleString('en-US')
 }
 
@@ -35,9 +34,9 @@ export default function GlobalCounter() {
 
   return (
     <div className="text-center">
-      <p className="text-4xl font-black text-purple-400">{formatPlays(totalPlays)}</p>
+      <p className="text-4xl font-black text-purple-400">{fmt(totalPlays)}</p>
       <p className="text-gray-500 text-sm tracking-widest mt-1">
-        PLAYS{totalDabs !== null && totalDabs > 0 && <> · {bucketDabs(totalDabs)} DABS</>}
+        PLAYS{totalDabs !== null && totalDabs > 0 && <> · {fmt(totalDabs)} DABS</>}
       </p>
     </div>
   )

@@ -6,7 +6,6 @@ import { motion, AnimatePresence } from 'framer-motion'
 import type { Score } from '@/types'
 import { useRealtimeVersion } from '@/hooks/useRealtimeVersion'
 import { useCountry } from '@/hooks/useCountry'
-import { bucketDabs } from '@/lib/format'
 import CountryLeaderboard from './CountryLeaderboard'
 
 type Tab = 'single' | 'streak' | 'country'
@@ -39,9 +38,9 @@ function GlobalCounter() {
 
   if (!totalPlays || totalPlays === 0) return null
   return (
-    <p className="text-gray-500 text-sm">
-      {totalPlays.toLocaleString('en-US')} plays
-      {totalDabs !== null && totalDabs > 0 && <> · {bucketDabs(totalDabs)} dabs</>}
+    <p className="text-gray-500 text-sm tracking-widest">
+      {totalPlays.toLocaleString('en-US')} PLAYS
+      {totalDabs !== null && totalDabs > 0 && <> · {totalDabs.toLocaleString('en-US')} DABS</>}
     </p>
   )
 }

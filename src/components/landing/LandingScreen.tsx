@@ -7,7 +7,6 @@ import Link from 'next/link'
 import { useSession } from 'next-auth/react'
 import type { GameMode } from '@/types'
 import { useRealtimeVersion } from '@/hooks/useRealtimeVersion'
-import { bucketDabs } from '@/lib/format'
 import ProfileCard from './ProfileCard'
 import UsernameSetupModal from './UsernameSetupModal'
 
@@ -113,7 +112,7 @@ export default function LandingScreen({ onStart }: Props) {
             transition={{ delay: 0.3 }}
             className="text-gray-400 text-base font-normal tracking-widest"
           >
-            {formatPlays(totalPlays)} PLAYS{totalDabs !== null && totalDabs > 0 && <> · {bucketDabs(totalDabs)} DABS</>}
+            {formatPlays(totalPlays)} PLAYS{totalDabs !== null && totalDabs > 0 && <> · {formatPlays(totalDabs)} DABS</>}
           </motion.p>
         )}
       </motion.div>
