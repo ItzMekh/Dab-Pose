@@ -68,12 +68,12 @@ export default function LandingScreen({ onStart }: Props) {
         <UsernameSetupModal initialUsername={session.user.name} />
       )}
 
-      {/* Top-left card — profile when signed in, sign-in prompt when not */}
+      {/* Top-right card — profile when signed in, sign-in prompt when not */}
       <motion.div
-        initial={{ opacity: 0, x: -16 }}
+        initial={{ opacity: 0, x: 16 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ delay: 0.2 }}
-        className="fixed top-4 left-4 z-30"
+        className="fixed top-4 right-4 z-30"
       >
         {session?.user?.name && !session.user.needsUsernameSetup ? (
           <ProfileCard username={session.user.name} avatarUrl={session.user.image} />
@@ -173,20 +173,6 @@ export default function LandingScreen({ onStart }: Props) {
       >
         Let&apos;s Go 🙌
       </motion.button>
-
-      {!session?.user && (
-        <motion.p
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.45 }}
-          className="text-gray-600 text-xs"
-        >
-          New here?{' '}
-          <Link href="/signup" className="text-gray-500 hover:text-white transition-colors">
-            Create a free account
-          </Link>
-        </motion.p>
-      )}
 
       <motion.a
         href="/leaderboard"

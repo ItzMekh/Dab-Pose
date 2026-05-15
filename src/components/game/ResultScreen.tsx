@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useSession } from 'next-auth/react'
 import type { GameResult } from '@/types'
@@ -106,8 +106,22 @@ export default function ResultScreen({ result, onRetry, onExit }: Props) {
     }
   }
 
+  // Auto-save once we have a usable identity (session name or cached username).
+  const autoSubmitRef = useRef(false)
+  useEffect(() => {
+    if (autoSubmitRef.current || submitting || submitted) return
+    if (sessionName) {
+      autoSubmitRef.current = true
+      handleSubmit()
+    } else if (username && validateUsername(username) === null) {
+      autoSubmitRef.current = true
+      handleSubmit()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sessionName, username, submitting, submitted])
+
   useStableKeyboardShortcuts({
-    Enter: () => { if (!submitted) handleSubmit() },
+    Enter: () => { if (!submitted && !submitting) handleSubmit() },
     Space: onRetry,
     Escape: onExit,
   })
@@ -203,46 +217,8 @@ export default function ResultScreen({ result, onRetry, onExit }: Props) {
         </AnimatePresence>
       </div>
 
-      {/* Submit form */}
-      {!submitted ? (
-        <div className="space-y-2">
-          <div className="flex gap-2">
-            {sessionName ? (
-              <div className="flex-1 flex items-center gap-2 bg-white/8 border border-white/15 rounded-xl px-3 py-2 text-sm">
-                <span className="text-gray-500 shrink-0">Signed in as</span>
-                <span className="text-white font-semibold truncate flex-1 min-w-0">{effectiveName}</span>
-                <CountryChip country={country} onChange={setCountry} />
-              </div>
-            ) : (
-              <div className="flex-1 flex items-center gap-2 bg-white/8 border border-white/15 rounded-xl pl-4 pr-2 py-1 focus-within:border-purple-500 transition-colors">
-                <input
-                  type="text"
-                  placeholder="Your name"
-                  value={username}
-                  onChange={e => { setUsername(e.target.value); setValidationErr(null) }}
-                  onKeyDown={e => e.key === 'Enter' && handleSubmit()}
-                  maxLength={20}
-                  className="flex-1 bg-transparent text-white placeholder-gray-400 outline-none text-sm py-1.5 min-w-0"
-                />
-                <CountryChip country={country} onChange={setCountry} />
-              </div>
-            )}
-            <button
-              onClick={handleSubmit}
-              disabled={submitting}
-              className="bg-purple-600 hover:bg-purple-500 disabled:opacity-40 text-white font-bold px-5 py-3 rounded-xl cursor-pointer transition-colors text-sm"
-            >
-              {submitting ? '…' : 'Save'}
-            </button>
-          </div>
-          {validationErr && <p className="text-red-400 text-xs text-left">{validationErr}</p>}
-          {submitErr && (
-            <p className="text-orange-400 text-xs text-left">
-              {submitErr} — <button onClick={handleSubmit} className="underline cursor-pointer">retry</button>
-            </p>
-          )}
-        </div>
-      ) : (
+      {/* Save status — auto-save happens on mount; anonymous w/o cached name keep an input */}
+      {submitted ? (
         <motion.p
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -250,6 +226,34 @@ export default function ResultScreen({ result, onRetry, onExit }: Props) {
         >
           Score saved to leaderboard ✓
         </motion.p>
+      ) : !sessionName && !username ? (
+        <div className="space-y-2">
+          <div className="flex items-center gap-2 bg-white/8 border border-white/15 rounded-xl pl-4 pr-2 py-1 focus-within:border-purple-500 transition-colors">
+            <input
+              type="text"
+              placeholder="Your name to save score"
+              value={username}
+              autoFocus
+              onChange={e => { setUsername(e.target.value); setValidationErr(null) }}
+              onKeyDown={e => e.key === 'Enter' && handleSubmit()}
+              onBlur={() => { if (username && validateUsername(username) === null) handleSubmit() }}
+              maxLength={20}
+              className="flex-1 bg-transparent text-white placeholder-gray-400 outline-none text-sm py-1.5 min-w-0"
+            />
+            <CountryChip country={country} onChange={setCountry} />
+          </div>
+          <p className="text-gray-500 text-xs">Press Enter to save</p>
+          {validationErr && <p className="text-red-400 text-xs text-left">{validationErr}</p>}
+        </div>
+      ) : submitErr ? (
+        <p className="text-orange-400 text-sm">
+          {submitErr} — <button onClick={handleSubmit} className="underline cursor-pointer">retry</button>
+        </p>
+      ) : (
+        <p className="text-gray-400 text-sm flex items-center justify-center gap-1.5">
+          <span className="inline-block w-1.5 h-1.5 rounded-full bg-purple-400 animate-pulse" />
+          Saving as <span className="text-white font-semibold">{effectiveName}</span>…
+        </p>
       )}
 
       {/* Actions */}
