@@ -79,15 +79,12 @@ export default function LandingScreen({ onStart }: Props) {
           <ProfileCard username={session.user.name} avatarUrl={session.user.image} />
         ) : !session?.user && (
           <Link href="/login" className="group block">
-            <div className="flex items-center gap-3 bg-black/80 backdrop-blur-sm border border-white/10 hover:border-purple-500/40 rounded-xl px-3 py-2 transition-all duration-200">
-              <div className="w-9 h-9 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-gray-500 group-hover:text-purple-400 text-base shrink-0 transition-colors">
+            <div className="flex flex-col items-center gap-1.5 bg-black/80 backdrop-blur-sm border border-white/10 group-hover:border-purple-500/40 group-hover:shadow-[0_0_16px_rgba(168,85,247,0.15)] rounded-2xl px-3 py-3 w-[88px] transition-all duration-200">
+              <div className="w-12 h-12 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-gray-500 group-hover:text-purple-400 text-xl shrink-0 transition-colors">
                 👤
               </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-white text-sm font-bold leading-tight">Sign in</p>
-                <p className="text-gray-500 text-xs">Track your dabs</p>
-              </div>
-              <span className="text-gray-500 group-hover:text-purple-400 text-sm transition-colors shrink-0">→</span>
+              <p className="text-white text-xs font-bold leading-tight text-center">Sign in</p>
+              <p className="text-gray-500 text-[10px] leading-tight text-center">Track dabs</p>
             </div>
           </Link>
         )}

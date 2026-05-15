@@ -17,6 +17,11 @@ const GRAD = [
   'from-emerald-500 to-teal-500',
 ]
 
+function shortPlays(n: number): string {
+  if (n >= 1000) return `${(n / 1000).toFixed(1)}k`
+  return n.toString()
+}
+
 interface Props {
   username: string
   avatarUrl?: string | null
@@ -42,27 +47,31 @@ export default function ProfileCard({ username, avatarUrl }: Props) {
 
   return (
     <Link href="/profile/me" className="group block">
-      <div className="flex items-center gap-3 bg-black/80 backdrop-blur-sm border border-white/10 hover:border-purple-500/40 rounded-xl px-3 py-2 transition-all duration-200">
-        {avatarUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={avatarUrl} alt={username} className="w-9 h-9 rounded-full object-cover shrink-0" />
-        ) : (
-          <div className={`w-9 h-9 rounded-full bg-gradient-to-br ${grad} flex items-center justify-center text-white font-black text-sm shrink-0`}>
-            {username[0].toUpperCase()}
-          </div>
-        )}
-
-        <div className="flex-1 min-w-0">
-          <p className="text-white text-sm font-bold truncate">{username}</p>
-          <p className="text-gray-500 text-xs">
-            {flag && <span className="mr-1">{flag}</span>}
-            {totalPlays !== null ? `${totalPlays.toLocaleString('en-US')} plays` : '—'}
-          </p>
+      <div className="flex flex-col items-center gap-1.5 bg-black/80 backdrop-blur-sm border border-white/10 group-hover:border-purple-500/40 group-hover:shadow-[0_0_16px_rgba(168,85,247,0.15)] rounded-2xl px-3 py-3 w-[88px] transition-all duration-200">
+        <div className="relative shrink-0">
+          {avatarUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={avatarUrl}
+              alt={username}
+              className="w-12 h-12 rounded-full object-cover"
+            />
+          ) : (
+            <div className={`w-12 h-12 rounded-full bg-gradient-to-br ${grad} flex items-center justify-center text-white font-black text-base`}>
+              {username[0].toUpperCase()}
+            </div>
+          )}
+          <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-400 border-2 border-black rounded-full" />
         </div>
 
-        <span className="text-gray-500 group-hover:text-purple-400 text-sm transition-colors shrink-0">
-          Profile →
-        </span>
+        <p className="text-white text-xs font-bold truncate w-full text-center leading-tight">
+          {username}
+        </p>
+
+        <p className="text-gray-500 text-[10px] leading-tight text-center">
+          {flag && <span className="mr-0.5">{flag}</span>}
+          {totalPlays !== null ? `${shortPlays(totalPlays)} plays` : '—'}
+        </p>
       </div>
     </Link>
   )
