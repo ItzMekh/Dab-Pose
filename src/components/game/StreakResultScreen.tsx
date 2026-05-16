@@ -96,18 +96,19 @@ export default function StreakResultScreen({ result, onRetry, onExit }: Props) {
     }
   }
 
+  const initialUsernameRef = useRef(username)
   const autoSubmitRef = useRef(false)
   useEffect(() => {
     if (autoSubmitRef.current || submitting || submitted) return
     if (sessionName) {
       autoSubmitRef.current = true
       handleSubmit()
-    } else if (username && validateUsername(username) === null) {
+    } else if (initialUsernameRef.current && validateUsername(initialUsernameRef.current) === null) {
       autoSubmitRef.current = true
       handleSubmit()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sessionName, username, submitting, submitted])
+  }, [sessionName, submitting, submitted])
 
   useStableKeyboardShortcuts({
     Enter: () => { if (!submitted && !submitting) handleSubmit() },
@@ -219,7 +220,7 @@ export default function StreakResultScreen({ result, onRetry, onExit }: Props) {
             Score saved to leaderboard ✓
           </motion.p>
         )
-      ) : !sessionName && !username ? (
+      ) : !sessionName && !submitting && !autoSubmitRef.current ? (
         <div className="space-y-2">
           <div className="flex items-center gap-2 bg-white/8 border border-white/15 rounded-xl pl-4 pr-2 py-1 focus-within:border-purple-500 transition-colors">
             <input
@@ -229,12 +230,18 @@ export default function StreakResultScreen({ result, onRetry, onExit }: Props) {
               autoFocus
               onChange={e => { setUsername(e.target.value); setValidationErr(null) }}
               onKeyDown={e => e.key === 'Enter' && handleSubmit()}
-              onBlur={() => { if (username && validateUsername(username) === null) handleSubmit() }}
               maxLength={20}
               className="flex-1 bg-transparent text-white placeholder-gray-400 outline-none text-sm py-1.5 min-w-0"
             />
             <CountryChip country={country} onChange={setCountry} />
           </div>
+          <button
+            onClick={handleSubmit}
+            disabled={!username.trim()}
+            className="w-full bg-orange-600 hover:bg-orange-500 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold py-2.5 rounded-xl transition-colors text-sm cursor-pointer"
+          >
+            Save to leaderboard
+          </button>
           {validationErr && <p className="text-red-400 text-xs text-left">{validationErr}</p>}
         </div>
       ) : submitErr ? (
