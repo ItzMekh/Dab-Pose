@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { inArray } from 'drizzle-orm'
 import { redis, weekKey, todayKey, countryAllKey, countryWeekKey, countryTodayKey } from '@/lib/redis'
+import { db } from '@/lib/db'
+import { users } from '@/lib/schema'
 
 const CACHE_HEADERS = {
   'Cache-Control': 'public, s-maxage=10, stale-while-revalidate=20',
@@ -40,6 +43,42 @@ export async function GET(req: NextRequest) {
   // single: ascending (lowest time_ms = rank #1)
   // streak: descending (highest count = rank #1)
   const raw = await redis.zrange(key, 0, 99, leaderMode === 'streak' ? { rev: true } : {}) as string[]
-  const data = raw.map(m => (typeof m === 'string' ? JSON.parse(m) : m))
+  type ParsedScore = {
+    id: string
+    username: string
+    time_ms: number | null
+    count: number | null
+    mode: 'single' | 'streak'
+    created_at: string
+    country?: string
+    userId?: string | null
+  }
+  const parsed: ParsedScore[] = raw.map(m => (typeof m === 'string' ? JSON.parse(m) : m))
+
+  // Augment each entry with `verified` (the account still exists in DB) and
+  // the user's avatarUrl, so the leaderboard can render a link + avatar + ✓
+  // badge for accounts and plain text for guests / deleted users.
+  const userIds = Array.from(new Set(parsed.map(s => s.userId).filter((id): id is string => !!id)))
+  let accountByUserId = new Map<string, { username: string; avatarUrl: string | null }>()
+  if (userIds.length > 0) {
+    const rows = await db
+      .select({ id: users.id, username: users.username, avatarUrl: users.avatarUrl })
+      .from(users)
+      .where(inArray(users.id, userIds))
+    accountByUserId = new Map(rows.map(r => [r.id, { username: r.username, avatarUrl: r.avatarUrl }]))
+  }
+
+  const data = parsed.map(s => {
+    const acct = s.userId ? accountByUserId.get(s.userId) : undefined
+    return {
+      ...s,
+      // Prefer the DB username when the account still exists — leaderboard JSON
+      // members hold a snapshot from submission time and may be stale after a rename.
+      username: acct?.username ?? s.username,
+      verified: !!acct,
+      avatarUrl: acct?.avatarUrl ?? null,
+    }
+  })
+
   return NextResponse.json(data, { headers: CACHE_HEADERS })
 }

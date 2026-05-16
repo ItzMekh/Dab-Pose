@@ -7,6 +7,7 @@ import type { Score } from '@/types'
 import { useRealtimeVersion } from '@/hooks/useRealtimeVersion'
 import { useCountry } from '@/hooks/useCountry'
 import CountryLeaderboard from './CountryLeaderboard'
+import UserCell from './UserCell'
 
 type Tab = 'single' | 'streak' | 'country'
 type Period = 'all' | 'week' | 'today'
@@ -177,13 +178,13 @@ export default function Leaderboard() {
                         <td className="px-3 sm:px-4 py-3 font-semibold">
                           {i === 0 ? (
                             <span className="flex flex-col sm:flex-row sm:items-center sm:gap-2 text-yellow-300">
-                              <span className="max-w-[140px] sm:max-w-none truncate">{score.username}</span>
+                              <UserCell score={score} colorClass="text-yellow-300 hover:text-yellow-200" />
                               <span className="text-[10px] sm:text-xs font-normal text-yellow-600 tracking-wide shrink-0">
                                 {tab === 'single' ? 'Reflex God' : 'Most Dabs'}
                               </span>
                             </span>
                           ) : (
-                            <span className="text-white max-w-[140px] sm:max-w-none truncate block">{score.username}</span>
+                            <UserCell score={score} colorClass="text-white hover:text-purple-300" />
                           )}
                         </td>
                         <td className="px-3 sm:px-4 py-3 text-center font-mono text-purple-300 font-bold align-top">

@@ -35,6 +35,9 @@ export interface Score {
   mode: 'single' | 'streak'
   created_at: string
   country?: string  // ISO 3166-1 alpha-2 or "XX" for unknown
+  userId?: string | null
+  verified?: boolean  // true when an account currently exists for this userId
+  avatarUrl?: string | null
 }
 
 export interface GameResult {
