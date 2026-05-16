@@ -54,11 +54,23 @@ export async function POST(req: NextRequest) {
 
   const { username, time_ms, mode = 'single', count } = body as Record<string, unknown>
 
+  // Country resolution: an explicit body.country (non-XX) wins because the user
+  // may have picked it via CountryChip. When body.country is missing, malformed,
+  // or 'XX' (the useCountry default before /api/country/detect resolves), fall
+  // back to the Vercel-detected IP country header so we don't store XX for a
+  // player whose client just hadn't finished detecting yet.
   const rawCountry = (body as Record<string, unknown>).country
-  const country =
+  const bodyCountry =
     typeof rawCountry === 'string' && /^[A-Z]{2}$/i.test(rawCountry)
       ? rawCountry.toUpperCase()
       : 'XX'
+  const headerCountry = req.headers.get('x-vercel-ip-country')?.toUpperCase() ?? ''
+  const country =
+    bodyCountry !== 'XX'
+      ? bodyCountry
+      : /^[A-Z]{2}$/.test(headerCountry)
+        ? headerCountry
+        : 'XX'
 
   if (mode !== 'single' && mode !== 'streak') {
     return NextResponse.json({ error: 'Invalid mode' }, { status: 400, headers: SECURITY_HEADERS })
