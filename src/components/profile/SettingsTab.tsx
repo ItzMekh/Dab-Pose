@@ -228,7 +228,7 @@ export default function SettingsTab({ username: initialUsername, country: initia
         ) : (
           <div className="space-y-2">
             <p className="text-gray-400 text-sm">
-              This permanently deletes your account. Leaderboard entries remain as anonymous scores. This cannot be undone.
+              This permanently deletes your account, profile, and stats. Your leaderboard entries keep your username so your scores stay on the board. This cannot be undone.
             </p>
             <div className="flex gap-2">
               <button
