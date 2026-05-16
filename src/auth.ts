@@ -2,9 +2,21 @@ import NextAuth from 'next-auth'
 import Credentials from 'next-auth/providers/credentials'
 import Google from 'next-auth/providers/google'
 import { compare } from 'bcryptjs'
+import { headers } from 'next/headers'
 import { db } from '@/lib/db'
 import { users } from '@/lib/schema'
 import { eq } from 'drizzle-orm'
+
+async function detectCountry(): Promise<string> {
+  try {
+    const h = await headers()
+    const code = h.get('x-vercel-ip-country')
+    if (code && /^[A-Z]{2}$/.test(code)) return code
+  } catch {
+    // headers() may not be available in some auth contexts — fall through.
+  }
+  return 'XX'
+}
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   providers: [
@@ -51,6 +63,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
               .replace(/[^a-z0-9_]/g, '')
               .slice(0, 16) || 'user'
             const username = `${base}_${Math.random().toString(36).slice(2, 6)}`
+            const country = await detectCountry()
             const [newUser] = await db
               .insert(users)
               .values({
@@ -58,7 +71,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                 username,
                 googleId: profile.sub as string,
                 avatarUrl: (profile.picture as string) ?? null,
-                country: 'XX',
+                country,
               })
               .returning({ id: users.id, username: users.username })
             token.id = newUser.id
