@@ -151,15 +151,15 @@ export default function Leaderboard() {
                 <div className="min-h-[200px] flex items-center justify-center text-center text-gray-400">No scores yet. Be the first!</div>
               ) : (
                 <table className="w-full">
-                  <thead>
-                    <tr className="border-b border-white/10 text-gray-400 text-sm">
-                      <th className="p-4 text-left">#</th>
-                      <th className="p-4 text-left">Name</th>
+                  <thead className="bg-white/3">
+                    <tr className="border-b border-white/10 text-gray-400 text-xs uppercase tracking-wider">
+                      <th className="px-3 sm:px-4 py-3 text-left">#</th>
+                      <th className="px-3 sm:px-4 py-3 text-left">Name</th>
                       {tab === 'single'
-                        ? <th className="p-4 text-center">Time (ms)</th>
-                        : <th className="p-4 text-center">Dabs / 30s</th>
+                        ? <th className="px-3 sm:px-4 py-3 text-center">Time (ms)</th>
+                        : <th className="px-3 sm:px-4 py-3 text-center">Dabs / 30s</th>
                       }
-                      <th className="p-4 text-right hidden sm:table-cell">Date & Time</th>
+                      <th className="px-3 sm:px-4 py-3 text-right hidden sm:table-cell">Date</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -169,27 +169,27 @@ export default function Leaderboard() {
                         initial={{ opacity: 0, x: -20 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: i * 0.03 }}
-                        className={`border-b border-white/5 hover:bg-white/5 transition-colors ${i === 0 ? 'bg-yellow-400/5' : ''}`}
+                        className={`border-b border-white/5 hover:bg-white/5 transition-colors ${i === 0 ? 'bg-yellow-400/5 hover:bg-yellow-400/8' : ''}`}
                       >
-                        <td className="p-4 text-gray-400 font-mono">
+                        <td className="px-3 sm:px-4 py-3 text-gray-400 font-mono align-top">
                           {i === 0 ? '👑' : i === 1 ? '🥈' : i === 2 ? '🥉' : `#${i + 1}`}
                         </td>
-                        <td className="p-4 font-semibold">
+                        <td className="px-3 sm:px-4 py-3 font-semibold">
                           {i === 0 ? (
-                            <span className="text-yellow-300 flex items-center gap-2">
-                              <span className="max-w-[120px] sm:max-w-none truncate">{score.username}</span>
-                              <span className="text-xs font-normal text-yellow-600 tracking-wide shrink-0">
+                            <span className="flex flex-col sm:flex-row sm:items-center sm:gap-2 text-yellow-300">
+                              <span className="max-w-[140px] sm:max-w-none truncate">{score.username}</span>
+                              <span className="text-[10px] sm:text-xs font-normal text-yellow-600 tracking-wide shrink-0">
                                 {tab === 'single' ? 'Reflex God' : 'Most Dabs'}
                               </span>
                             </span>
                           ) : (
-                            <span className="text-white max-w-[120px] sm:max-w-none truncate block">{score.username}</span>
+                            <span className="text-white max-w-[140px] sm:max-w-none truncate block">{score.username}</span>
                           )}
                         </td>
-                        <td className="p-4 text-center font-mono text-purple-300 font-bold">
+                        <td className="px-3 sm:px-4 py-3 text-center font-mono text-purple-300 font-bold align-top">
                           {tab === 'single' ? score.time_ms : score.count}
                         </td>
-                        <td className="p-4 text-right hidden sm:table-cell text-gray-600 text-xs font-mono">
+                        <td className="px-3 sm:px-4 py-3 text-right hidden sm:table-cell text-gray-600 text-xs font-mono align-top">
                           {(() => {
                             const d = new Date(score.created_at)
                             const dd = String(d.getDate()).padStart(2, '0')

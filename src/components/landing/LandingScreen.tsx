@@ -84,8 +84,8 @@ export default function LandingScreen({ onStart }: Props) {
           <ProfileCard username={session.user.name} avatarUrl={session.user.image} />
         ) : !session?.user && (
           <Link href="/login" className="group block">
-            <div className="flex flex-col items-center gap-1.5 bg-black/80 backdrop-blur-sm border border-white/10 group-hover:border-purple-500/40 group-hover:shadow-[0_0_16px_rgba(168,85,247,0.15)] rounded-2xl px-3 py-3 w-[88px] transition-all duration-200">
-              <div className="w-12 h-12 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-gray-500 group-hover:text-purple-400 text-xl shrink-0 transition-colors">
+            <div className="flex flex-col items-center gap-1.5 bg-black/80 backdrop-blur-sm border border-white/10 group-hover:border-purple-500/40 group-hover:shadow-[0_0_16px_rgba(168,85,247,0.15)] rounded-2xl px-2.5 py-2.5 sm:px-3 sm:py-3 w-[76px] sm:w-[88px] transition-all duration-200">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-gray-500 group-hover:text-purple-400 text-xl shrink-0 transition-colors">
                 👤
               </div>
               <p className="text-white text-xs font-bold leading-tight text-center">Sign in</p>
@@ -106,14 +106,18 @@ export default function LandingScreen({ onStart }: Props) {
         </h1>
         <p className="text-gray-400 text-lg sm:text-2xl font-medium">How fast can you dab?</p>
         {totalPlays !== null && totalPlays > 0 && (
-          <motion.p
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
+          <motion.div
+            initial={{ opacity: 0, y: 4 }}
+            animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
-            className="text-gray-400 text-base font-normal tracking-widest"
+            className="flex justify-center pt-1"
           >
-            {formatPlays(totalPlays)} PLAYS{totalDabs !== null && totalDabs > 0 && <> · {formatPlays(totalDabs)} DABS</>}
-          </motion.p>
+            <span className="inline-flex items-center gap-2 bg-white/5 border border-white/10 rounded-full px-3.5 py-1.5 text-gray-300 text-xs sm:text-sm font-semibold tracking-wider">
+              <span className="inline-block w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
+              {formatPlays(totalPlays)} PLAYS
+              {totalDabs !== null && totalDabs > 0 && <span className="text-gray-500">· {formatPlays(totalDabs)} DABS</span>}
+            </span>
+          </motion.div>
         )}
       </motion.div>
 
