@@ -1,11 +1,11 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, type ReactNode } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useSession } from 'next-auth/react'
-import { RotateCcw, Home, Flame, Crown } from 'lucide-react'
+import { RotateCcw, Home, Flame, Crown, Trophy, Calendar, Sparkles } from 'lucide-react'
 import type { StreakResult } from '@/types'
-import { submitScore, validateUsername, fetchLeaderboard } from '@/lib/api'
+import { submitScore, validateUsername, fetchRankPreview, type RankTriple } from '@/lib/api'
 import { useUsername } from '@/hooks/useUsername'
 import { useStableKeyboardShortcuts } from '@/hooks/useStableKeyboardShortcuts'
 import { useCountry } from '@/hooks/useCountry'
@@ -25,6 +25,28 @@ function getRating(count: number): { label: string; color: string } {
   return              { label: 'KEEP GOING',   color: 'text-gray-400'   }
 }
 
+interface RankRowProps {
+  icon: ReactNode
+  label: string
+  rank: number | null
+  highlight?: boolean
+}
+
+function RankRow({ icon, label, rank, highlight }: RankRowProps) {
+  const isOne = rank === 1
+  return (
+    <div className={`flex items-center justify-between px-4 py-2.5 ${highlight && isOne ? 'bg-orange-400/8' : ''}`}>
+      <span className="flex items-center gap-2 text-gray-300 uppercase tracking-wider text-[11px] font-semibold">
+        {icon}
+        {label}
+      </span>
+      <span className={`tabular-nums font-black text-base ${isOne ? 'text-orange-200' : 'text-white'}`}>
+        {rank === null ? '—' : isOne ? <>#1 <span className="text-xs">🔥</span></> : `#${rank}`}
+      </span>
+    </div>
+  )
+}
+
 export default function StreakResultScreen({ result, onRetry, onExit }: Props) {
   const { username, setUsername, saveUsername } = useUsername()
   const { data: session } = useSession()
@@ -39,20 +61,20 @@ export default function StreakResultScreen({ result, onRetry, onExit }: Props) {
   const [percentile, setPercentile] = useState<number | null>(null)
   const [isKing, setIsKing] = useState(false)
 
-  // Pre-submit rank preview
-  const [previewRank, setPreviewRank] = useState<number | null>(null)
+  // Rank preview (pre-submit) + post-submit ranks (from /api/score)
+  const [previewRanks, setPreviewRanks] = useState<RankTriple | null>(null)
+  const [postRanks, setPostRanks] = useState<RankTriple | null>(null)
   const [isNewRecord, setIsNewRecord] = useState(false)
 
   const rating = getRating(result.count)
   const showRankOneBanner = (isNewRecord && !submitted) || (isKing && submitted)
+  const ranks = submitted ? postRanks : previewRanks
 
   useEffect(() => {
-    fetchLeaderboard('streak')
-      .then(scores => {
-        const more = scores.filter(s => s.count !== null && s.count > result.count).length
-        const rank = more + 1
-        setPreviewRank(rank)
-        setIsNewRecord(rank === 1)
+    fetchRankPreview('streak', result.count)
+      .then(r => {
+        setPreviewRanks(r)
+        setIsNewRecord(r.all === 1)
       })
       .catch(() => { /* rank preview unavailable — silent degradation */ })
   }, [result.count])
@@ -90,6 +112,11 @@ export default function StreakResultScreen({ result, onRetry, onExit }: Props) {
       if (!sessionName) saveUsername(nameToSubmit)
       setPercentile(res.percentile ?? null)
       setIsKing(res.isKing ?? false)
+      setPostRanks({
+        all: res.allRank ?? null,
+        week: res.weekRank ?? null,
+        today: res.todayRank ?? null,
+      })
       setSubmitted(true)
     } else {
       setSubmitErr(res.error ?? 'Failed to save score')
@@ -184,35 +211,31 @@ export default function StreakResultScreen({ result, onRetry, onExit }: Props) {
           <p className="text-gray-400 text-xs">Best single: {result.best_time_ms}ms</p>
         )}
 
-        {/* Rank badge — switches from preview to percentile after submit */}
-        <AnimatePresence mode="wait">
-          {!submitted && previewRank !== null && (
-            <motion.div
-              key="rank-preview"
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0 }}
-              className="pt-1"
-            >
-              <span className="inline-block bg-orange-500/15 border border-orange-500/30 text-orange-300 text-xs font-semibold px-3 py-1.5 rounded-full">
-                You would rank #{previewRank}
-              </span>
-            </motion.div>
-          )}
-          {submitted && percentile !== null && (
-            <motion.div
-              key="percentile"
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="pt-1"
-            >
-              <span className="inline-block bg-orange-500/15 border border-orange-500/30 text-orange-300 text-xs font-semibold px-3 py-1.5 rounded-full">
-                More dabs than {percentile}% of players
-              </span>
-            </motion.div>
-          )}
-        </AnimatePresence>
+        {(percentile !== null || ranks) && (
+          <p className="text-orange-300 text-xs font-semibold pt-1">
+            {percentile !== null
+              ? <>More dabs than <span className="tabular-nums text-orange-200">{percentile}%</span> of players</>
+              : <>Calculating rank…</>}
+          </p>
+        )}
       </div>
+
+      {/* Rank breakdown — All Time / This Week / Today */}
+      <AnimatePresence>
+        {ranks && (
+          <motion.div
+            key="ranks"
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            className="bg-white/5 border border-white/10 rounded-2xl divide-y divide-white/5 overflow-hidden text-sm"
+          >
+            <RankRow icon={<Trophy className="w-4 h-4 text-yellow-300" strokeWidth={2.5} />} label="All Time" rank={ranks.all} />
+            <RankRow icon={<Calendar className="w-4 h-4 text-cyan-300" strokeWidth={2.5} />} label="This Week" rank={ranks.week} />
+            <RankRow icon={<Sparkles className="w-4 h-4 text-orange-200" strokeWidth={2.5} />} label="Today" rank={ranks.today} highlight />
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {submitted ? (
         !showRankOneBanner && (

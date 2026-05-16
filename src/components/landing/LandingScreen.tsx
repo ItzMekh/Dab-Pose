@@ -121,12 +121,12 @@ export default function LandingScreen({ onStart }: Props) {
         )}
       </motion.div>
 
-      {/* Mode selector */}
+      {/* Mode selector — compact icon-top on mobile, horizontal on sm+ */}
       <motion.div
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.25 }}
-        className="flex flex-col sm:flex-row gap-4 max-w-lg mx-auto"
+        className="grid grid-cols-2 gap-3 sm:gap-4 max-w-lg mx-auto"
       >
         {MODES.map(({ id, icon: Icon, label, sub, iconColor, iconBg, accentBorder, accentBg }) => {
           const selected = selectedMode === id
@@ -135,15 +135,15 @@ export default function LandingScreen({ onStart }: Props) {
               key={id}
               onClick={() => setSelectedMode(id)}
               whileTap={{ scale: 0.97 }}
-              className={`flex-1 border rounded-2xl px-5 py-5 text-left cursor-pointer transition-all duration-200 ${
+              className={`border rounded-2xl px-3 py-4 sm:px-5 sm:py-5 text-center sm:text-left cursor-pointer transition-all duration-200 ${
                 selected
                   ? `${accentBorder} ${accentBg}`
                   : 'border-white/10 bg-white/5 hover:bg-white/8'
               }`}
             >
-              <div className="flex items-center gap-3 mb-2">
+              <div className="flex flex-col items-center sm:flex-row sm:items-center gap-2 sm:gap-3 mb-2">
                 <motion.div
-                  className={`w-11 h-11 rounded-xl flex items-center justify-center ${iconBg}`}
+                  className={`w-12 h-12 sm:w-11 sm:h-11 rounded-xl flex items-center justify-center ${iconBg}`}
                   animate={selected && id === 'streak'
                     ? { scale: [1, 1.15, 1] }
                     : selected && id === 'single'
@@ -153,19 +153,19 @@ export default function LandingScreen({ onStart }: Props) {
                 >
                   <Icon className={`w-6 h-6 ${iconColor}`} strokeWidth={2.5} />
                 </motion.div>
-                <div>
-                  <p className="text-white font-bold text-base leading-tight">{label}</p>
+                <div className="flex flex-col items-center sm:items-start">
+                  <p className="text-white font-bold text-sm sm:text-base leading-tight">{label}</p>
                   {selected && (
                     <motion.div
                       initial={{ width: 0 }}
                       animate={{ width: '100%' }}
                       transition={{ duration: 0.25 }}
-                      className={`h-0.5 mt-1 rounded-full ${id === 'single' ? 'bg-yellow-400' : 'bg-orange-400'}`}
+                      className={`h-0.5 mt-1 rounded-full ${id === 'single' ? 'bg-yellow-400' : 'bg-orange-400'} w-full max-w-[80px] sm:max-w-none`}
                     />
                   )}
                 </div>
               </div>
-              <p className="text-gray-400 text-sm">{sub}</p>
+              <p className="text-gray-400 text-xs sm:text-sm leading-snug">{sub}</p>
             </motion.button>
           )
         })}

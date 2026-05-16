@@ -5,9 +5,12 @@ const MAX_SCORE_MS = 30_000
 const USERNAME_RE = /^[a-zA-Z0-9_\- ]{1,20}$/
 const SUBMIT_TIMEOUT_MS = 5000
 
-export async function fetchLeaderboard(mode: 'single' | 'streak'): Promise<Score[]> {
+export type Period = 'all' | 'week' | 'today'
+
+export async function fetchLeaderboard(mode: 'single' | 'streak', period: Period = 'all'): Promise<Score[]> {
   try {
-    const res = await fetch(`/api/leaderboard?mode=${mode}`, {
+    const periodParam = period !== 'all' ? `&period=${period}` : ''
+    const res = await fetch(`/api/leaderboard?mode=${mode}${periodParam}`, {
       signal: AbortSignal.timeout(5000),
     })
     if (!res.ok) return []
@@ -15,6 +18,31 @@ export async function fetchLeaderboard(mode: 'single' | 'streak'): Promise<Score
   } catch {
     return []
   }
+}
+
+export interface RankTriple {
+  all: number | null
+  week: number | null
+  today: number | null
+}
+
+export async function fetchRankPreview(
+  mode: 'single' | 'streak',
+  metric: number,
+): Promise<RankTriple> {
+  const [all, week, today] = await Promise.all([
+    fetchLeaderboard(mode, 'all'),
+    fetchLeaderboard(mode, 'week'),
+    fetchLeaderboard(mode, 'today'),
+  ])
+  const rankOf = (scores: Score[]): number | null => {
+    if (scores.length === 0) return 1
+    const better = mode === 'single'
+      ? scores.filter(s => s.time_ms !== null && s.time_ms < metric).length
+      : scores.filter(s => s.count !== null && s.count > metric).length
+    return better + 1
+  }
+  return { all: rankOf(all), week: rankOf(week), today: rankOf(today) }
 }
 
 export function validateUsername(name: string): string | null {
@@ -59,6 +87,9 @@ export interface SubmitResult {
   error?: string
   percentile?: number
   isKing?: boolean
+  allRank?: number | null
+  weekRank?: number | null
+  todayRank?: number | null
 }
 
 export async function submitScore(payload: SubmitPayload): Promise<SubmitResult> {
@@ -76,7 +107,14 @@ export async function submitScore(payload: SubmitPayload): Promise<SubmitResult>
       return { ok: false, error: body.error ?? 'Submission failed' }
     }
     const data = await res.json().catch(() => ({}))
-    return { ok: true, percentile: data.percentile, isKing: data.isKing }
+    return {
+      ok: true,
+      percentile: data.percentile,
+      isKing: data.isKing,
+      allRank: data.allRank ?? null,
+      weekRank: data.weekRank ?? null,
+      todayRank: data.todayRank ?? null,
+    }
   } catch {
     return { ok: false, error: 'Network error — score not saved' }
   }
