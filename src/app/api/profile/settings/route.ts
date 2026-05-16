@@ -5,10 +5,12 @@ import { db } from '@/lib/db'
 import { users, scores } from '@/lib/schema'
 import { eq } from 'drizzle-orm'
 import { rewriteLeaderboardUsername } from '@/lib/rename-leaderboard'
+import { redis, weekKey, todayKey } from '@/lib/redis'
 
 const USERNAME_RE = /^[a-zA-Z0-9_]{3,20}$/
 const COUNTRY_RE = /^[A-Z]{2}$/
 const RENAME_COOLDOWN_MS = 24 * 60 * 60 * 1000 // 1 day
+const DELETED_USERNAME = '[deleted]'
 
 function suggestUsernames(base: string): string[] {
   const b = base.slice(0, 17)
@@ -145,7 +147,41 @@ export async function DELETE() {
   if (!session?.user?.id) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
+  const userId = session.user.id
 
-  await db.delete(users).where(eq(users.id, session.user.id))
-  return NextResponse.json({ ok: true })
+  // 1. Anonymize the username on every score row owned by this user. The FK on
+  //    scores.user_id is ON DELETE SET NULL, so the userId column nulls out
+  //    automatically when we delete the user below.
+  await db.update(scores).set({ username: DELETED_USERNAME }).where(eq(scores.userId, userId))
+
+  // 2. Rewrite each Redis leaderboard member that points at this userId so the
+  //    entry stays on the leaderboard with the same score / country / id but
+  //    appears as the anonymous "[deleted]" user.
+  const lbKeys = [
+    'lb:single:all',
+    `lb:single:week:${weekKey()}`,
+    `lb:single:today:${todayKey()}`,
+    'lb:streak:all',
+    `lb:streak:week:${weekKey()}`,
+    `lb:streak:today:${todayKey()}`,
+  ]
+  type Member = { id?: string; userId?: string | null; username?: string; mode?: string; time_ms?: number; count?: number }
+  let rewritten = 0
+  for (const key of lbKeys) {
+    const members = (await redis.zrange(key, 0, -1)) as string[]
+    for (const m of members) {
+      let parsed: Member | null = null
+      try { parsed = JSON.parse(m) } catch { continue }
+      if (parsed?.userId !== userId) continue
+      const score = parsed.mode === 'streak' ? Number(parsed.count ?? 0) : Number(parsed.time_ms ?? 0)
+      const newMember = JSON.stringify({ ...parsed, userId: null, username: DELETED_USERNAME })
+      await redis.zrem(key, m)
+      await redis.zadd(key, { score, member: newMember })
+      rewritten++
+    }
+  }
+
+  // 3. Delete the user row last — FK cascade sets scores.user_id NULL.
+  await db.delete(users).where(eq(users.id, userId))
+  return NextResponse.json({ ok: true, leaderboard: { rewritten } })
 }

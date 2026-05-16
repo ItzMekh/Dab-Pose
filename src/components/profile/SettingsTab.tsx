@@ -207,6 +207,16 @@ export default function SettingsTab({ username: initialUsername, country: initia
       )}
 
       <div className="border-t border-white/5 pt-6 space-y-3">
+        <h3 className="text-white text-sm font-semibold">Session</h3>
+        <button
+          onClick={() => signOut({ callbackUrl: '/' })}
+          className="px-4 py-2 border border-white/15 hover:border-white/30 text-gray-300 hover:text-white text-sm font-bold rounded-lg transition-colors"
+        >
+          Sign out
+        </button>
+      </div>
+
+      <div className="border-t border-white/5 pt-6 space-y-3">
         <h3 className="text-red-400 text-sm font-semibold">Danger Zone</h3>
         {!deleteConfirm ? (
           <button

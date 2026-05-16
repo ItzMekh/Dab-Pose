@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { signIn } from 'next-auth/react'
 import Link from 'next/link'
 import AuthBrandPanel from '@/components/auth/AuthBrandPanel'
+import { useCountry } from '@/hooks/useCountry'
 
 function GoogleIcon() {
   return (
@@ -24,6 +25,7 @@ export default function SignupPage() {
   const [error, setError] = useState<string | null>(null)
   const [suggestions, setSuggestions] = useState<string[]>([])
   const [loading, setLoading] = useState(false)
+  const [country] = useCountry()
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -35,7 +37,7 @@ export default function SignupPage() {
     const res = await fetch('/api/auth/signup', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username, email, password }),
+      body: JSON.stringify({ username, email, password, country }),
     })
     const data = await res.json()
     setLoading(false)
