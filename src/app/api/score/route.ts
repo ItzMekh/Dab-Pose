@@ -131,16 +131,21 @@ export async function POST(req: NextRequest) {
     p.expire(cTKey, TODAY_TTL)
     await p.exec()
 
-    const [betterCount, totalCount, rank] = await Promise.all([
+    const [betterCount, totalCount, rank, weekRank, todayRank] = await Promise.all([
       redis.zcount(allKey, count + 1, '+inf'),
       redis.zcard(allKey),
       redis.zrevrank(allKey, member),
+      redis.zrevrank(wKey, member),
+      redis.zrevrank(tKey, member),
     ])
 
     const total = (totalCount as number) ?? 1
     const better = (betterCount as number) ?? 0
     const percentile = Math.round(((total - better) / total) * 100)
     const isKing = rank === 0
+    const allRankOneBased = typeof rank === 'number' ? rank + 1 : null
+    const weekRankOneBased = typeof weekRank === 'number' ? weekRank + 1 : null
+    const todayRankOneBased = typeof todayRank === 'number' ? todayRank + 1 : null
 
     if (userId) {
       await db.insert(scoresTable).values({
@@ -150,12 +155,16 @@ export async function POST(req: NextRequest) {
         timeMs: bestMs,
         count: count as number,
         country,
-        rankGlobal: typeof rank === 'number' ? rank + 1 : null,
+        rankGlobal: allRankOneBased,
       })
     }
 
     return NextResponse.json(
-      { id, username: user, count, time_ms: bestMs, mode: 'streak', created_at: now, percentile, isKing },
+      {
+        id, username: user, count, time_ms: bestMs, mode: 'streak', created_at: now,
+        percentile, isKing,
+        allRank: allRankOneBased, weekRank: weekRankOneBased, todayRank: todayRankOneBased,
+      },
       { status: 201, headers: SECURITY_HEADERS }
     )
   }
@@ -188,16 +197,21 @@ export async function POST(req: NextRequest) {
   p.expire(cTKey, TODAY_TTL)
   await p.exec()
 
-  const [betterCount, totalCount, rank] = await Promise.all([
+  const [betterCount, totalCount, rank, weekRank, todayRank] = await Promise.all([
     redis.zcount(allKey, '-inf', time_ms - 1),
     redis.zcard(allKey),
     redis.zrank(allKey, member),
+    redis.zrank(wKey, member),
+    redis.zrank(tKey, member),
   ])
 
   const total = (totalCount as number) ?? 1
   const better = (betterCount as number) ?? 0
   const percentile = Math.round(((total - better) / total) * 100)
   const isKing = rank === 0
+  const allRankOneBased = typeof rank === 'number' ? rank + 1 : null
+  const weekRankOneBased = typeof weekRank === 'number' ? weekRank + 1 : null
+  const todayRankOneBased = typeof todayRank === 'number' ? todayRank + 1 : null
 
   if (userId) {
     await db.insert(scoresTable).values({
@@ -207,12 +221,16 @@ export async function POST(req: NextRequest) {
       timeMs: time_ms as number,
       count: null,
       country,
-      rankGlobal: typeof rank === 'number' ? rank + 1 : null,
+      rankGlobal: allRankOneBased,
     })
   }
 
   return NextResponse.json(
-    { id, username: user, time_ms, count: null, mode: 'single', created_at: now, percentile, isKing },
+    {
+      id, username: user, time_ms, count: null, mode: 'single', created_at: now,
+      percentile, isKing,
+      allRank: allRankOneBased, weekRank: weekRankOneBased, todayRank: todayRankOneBased,
+    },
     { status: 201, headers: SECURITY_HEADERS }
   )
 }
