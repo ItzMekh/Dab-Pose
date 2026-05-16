@@ -113,7 +113,7 @@ export default function LandingScreen({ onStart }: Props) {
             className="flex justify-center pt-1"
           >
             <span className="inline-flex items-center gap-2 bg-white/5 border border-white/10 rounded-full px-3.5 py-1.5 text-gray-300 text-xs sm:text-sm font-semibold tracking-wider">
-              <span className="inline-block w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
+              <span className="inline-block w-1.5 h-1.5 rounded-full bg-purple-400 animate-pulse" />
               {formatPlays(totalPlays)} PLAYS
               {totalDabs !== null && totalDabs > 0 && <span className="text-gray-500">· {formatPlays(totalDabs)} DABS</span>}
             </span>

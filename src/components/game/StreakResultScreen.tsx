@@ -260,8 +260,9 @@ export default function StreakResultScreen({ result, onRetry, onExit }: Props) {
         </button>
         <a
           href="/leaderboard"
-          className="flex-1 inline-flex items-center justify-center bg-purple-950/60 hover:bg-purple-900/60 active:scale-95 text-purple-300 font-bold py-3 rounded-xl text-center transition-all text-sm"
+          className="flex-1 inline-flex items-center justify-center gap-2 bg-purple-950/60 hover:bg-purple-900/60 active:scale-95 text-purple-300 font-bold py-3 rounded-xl text-center transition-all text-sm"
         >
+          <Crown className="w-4 h-4" strokeWidth={2.5} />
           Leaderboard
         </a>
       </div>
