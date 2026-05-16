@@ -54,17 +54,17 @@ export default function ProfileCard({ username, avatarUrl }: Props) {
 
   return (
     <Link href="/profile/me" className="group block">
-      <div className="flex flex-col items-center gap-1.5 bg-black/80 backdrop-blur-sm border border-white/10 group-hover:border-purple-500/40 group-hover:shadow-[0_0_16px_rgba(168,85,247,0.15)] rounded-2xl px-3 py-3 w-[88px] transition-all duration-200">
+      <div className="flex flex-col items-center gap-1.5 bg-black/80 backdrop-blur-sm border border-white/10 group-hover:border-purple-500/40 group-hover:shadow-[0_0_16px_rgba(168,85,247,0.15)] rounded-2xl px-2.5 py-2.5 sm:px-3 sm:py-3 w-[76px] sm:w-[88px] transition-all duration-200">
         <div className="relative shrink-0">
           {avatarUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
               src={avatarUrl}
               alt={displayName}
-              className="w-12 h-12 rounded-full object-cover"
+              className="w-10 h-10 sm:w-12 sm:h-12 rounded-full object-cover"
             />
           ) : (
-            <div className={`w-12 h-12 rounded-full bg-gradient-to-br ${grad} flex items-center justify-center text-white font-black text-base`}>
+            <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gradient-to-br ${grad} flex items-center justify-center text-white font-black text-base`}>
               {displayName[0].toUpperCase()}
             </div>
           )}

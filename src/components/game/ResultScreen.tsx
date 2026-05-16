@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useSession } from 'next-auth/react'
+import { RotateCcw, Home, Trophy, Crown } from 'lucide-react'
 import type { GameResult } from '@/types'
 import { submitScore, validateUsername, fetchLeaderboard } from '@/lib/api'
 import { useUsername } from '@/hooks/useUsername'
@@ -60,6 +61,7 @@ export default function ResultScreen({ result, onRetry, onExit }: Props) {
 
   const rating = getRating(result.time_ms)
   const timeDisplay = formatTimeDisplay(result.time_ms)
+  const showRankOneBanner = (isNewRecord && !submitted) || (isKing && submitted)
 
   useEffect(() => {
     fetchLeaderboard('single')
@@ -133,47 +135,58 @@ export default function ResultScreen({ result, onRetry, onExit }: Props) {
       transition={{ duration: 0.35 }}
       className="text-center space-y-5 p-4 sm:p-6 w-full max-w-sm mx-auto"
     >
-      {/* NEW RECORD banner — pre-submit */}
+      {/* Unified #1 banner — content swaps pre/post submit, container persists */}
       <AnimatePresence>
-        {isNewRecord && !submitted && (
+        {showRankOneBanner && (
           <motion.div
-            key="new-record"
-            initial={{ scale: 0.5, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 0.8, opacity: 0 }}
-            transition={{ type: 'spring', stiffness: 350, damping: 18, delay: 0.15 }}
-            className="bg-yellow-400/10 border border-yellow-400/50 rounded-2xl px-4 py-4"
+            key="rank-one-banner"
+            initial={{ scale: 0.85, opacity: 0, y: -8 }}
+            animate={{ scale: 1, opacity: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.9 }}
+            transition={{ type: 'spring', stiffness: 320, damping: 22 }}
+            className="relative bg-yellow-400/10 border border-yellow-400/40 rounded-2xl px-4 py-4 overflow-hidden"
           >
-            <motion.p
-              animate={{ scale: [1, 1.2, 1] }}
-              transition={{ repeat: Infinity, duration: 1.4, ease: 'easeInOut' }}
-              className="text-4xl"
-            >
-              🏆
-            </motion.p>
-            <p className="text-yellow-300 font-black text-2xl tracking-wide mt-1">NEW RECORD!</p>
-            <p className="text-yellow-600 text-xs mt-0.5">You&apos;re #1 on the leaderboard</p>
-          </motion.div>
-        )}
-
-        {/* King Dab banner — post-submit */}
-        {isKing && submitted && (
-          <motion.div
-            key="king-dab"
-            initial={{ opacity: 0, scale: 0.7, y: -20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            transition={{ type: 'spring', stiffness: 300, damping: 18 }}
-            className="bg-yellow-400/10 border border-yellow-400/40 rounded-2xl px-4 py-3"
-          >
-            <p className="text-3xl">⚡</p>
-            <p className="text-yellow-300 font-black text-lg tracking-wide">REFLEX GOD</p>
-            <p className="text-yellow-500 text-xs">Fastest reaction on the leaderboard</p>
+            <AnimatePresence mode="wait" initial={false}>
+              {!submitted ? (
+                <motion.div
+                  key="banner-pre"
+                  initial={{ opacity: 0, y: 4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -4 }}
+                  transition={{ duration: 0.2 }}
+                  className="flex flex-col items-center"
+                >
+                  <motion.div
+                    animate={{ scale: [1, 1.18, 1] }}
+                    transition={{ repeat: Infinity, duration: 1.4, ease: 'easeInOut' }}
+                    className="text-yellow-300"
+                  >
+                    <Trophy className="w-9 h-9" strokeWidth={2.5} />
+                  </motion.div>
+                  <p className="text-yellow-300 font-black text-2xl tracking-wide mt-2">NEW RECORD!</p>
+                  <p className="text-yellow-600/90 text-xs mt-1">Saving your #1 score…</p>
+                </motion.div>
+              ) : (
+                <motion.div
+                  key="banner-post"
+                  initial={{ opacity: 0, y: 4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -4 }}
+                  transition={{ duration: 0.22 }}
+                  className="flex flex-col items-center"
+                >
+                  <Crown className="w-8 h-8 text-yellow-300" strokeWidth={2.5} />
+                  <p className="text-yellow-300 font-black text-xl tracking-wide mt-2">REFLEX GOD</p>
+                  <p className="text-yellow-500 text-xs mt-1">You hold #1 on the leaderboard</p>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </motion.div>
         )}
       </AnimatePresence>
 
       {/* Score card */}
-      <div className="bg-white/5 border border-white/10 backdrop-blur-xl rounded-3xl p-7 space-y-3">
+      <div className="bg-white/5 border border-white/10 backdrop-blur-xl rounded-3xl p-6 space-y-3">
         <p className={`text-2xl font-black tracking-wide ${rating.color}`}>{rating.label}</p>
         <p className="text-5xl sm:text-6xl font-black text-white tabular-nums">
           {timeDisplay.primary}
@@ -217,15 +230,17 @@ export default function ResultScreen({ result, onRetry, onExit }: Props) {
         </AnimatePresence>
       </div>
 
-      {/* Save status — auto-save happens on mount; anonymous w/o cached name keep an input */}
+      {/* Save status — suppressed when #1 banner is owning the saving message */}
       {submitted ? (
-        <motion.p
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="text-green-400 font-semibold text-sm"
-        >
-          Score saved to leaderboard ✓
-        </motion.p>
+        !showRankOneBanner && (
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="text-green-400 font-semibold text-sm"
+          >
+            Score saved to leaderboard ✓
+          </motion.p>
+        )
       ) : !sessionName && !username ? (
         <div className="space-y-2">
           <div className="flex items-center gap-2 bg-white/8 border border-white/15 rounded-xl pl-4 pr-2 py-1 focus-within:border-purple-500 transition-colors">
@@ -242,7 +257,6 @@ export default function ResultScreen({ result, onRetry, onExit }: Props) {
             />
             <CountryChip country={country} onChange={setCountry} />
           </div>
-          <p className="text-gray-500 text-xs">Press Enter to save</p>
           {validationErr && <p className="text-red-400 text-xs text-left">{validationErr}</p>}
         </div>
       ) : submitErr ? (
@@ -250,23 +264,26 @@ export default function ResultScreen({ result, onRetry, onExit }: Props) {
           {submitErr} — <button onClick={handleSubmit} className="underline cursor-pointer">retry</button>
         </p>
       ) : (
-        <p className="text-gray-400 text-sm flex items-center justify-center gap-1.5">
-          <span className="inline-block w-1.5 h-1.5 rounded-full bg-purple-400 animate-pulse" />
-          Saving as <span className="text-white font-semibold">{effectiveName}</span>…
-        </p>
+        !showRankOneBanner && (
+          <p className="text-gray-400 text-sm flex items-center justify-center gap-1.5">
+            <span className="inline-block w-1.5 h-1.5 rounded-full bg-purple-400 animate-pulse" />
+            Saving as <span className="text-white font-semibold">{effectiveName}</span>…
+          </p>
+        )
       )}
 
       {/* Actions */}
       <div className="flex gap-3">
         <button
           onClick={onRetry}
-          className="flex-1 bg-white/8 hover:bg-white/15 active:scale-95 text-white font-bold py-3 rounded-xl cursor-pointer transition-all text-sm"
+          className="flex-1 inline-flex items-center justify-center gap-2 bg-white/8 hover:bg-white/15 active:scale-95 text-white font-bold py-3 rounded-xl cursor-pointer transition-all text-sm"
         >
-          🔄 Try Again
+          <RotateCcw className="w-4 h-4" strokeWidth={2.5} />
+          Try Again
         </button>
         <a
           href="/leaderboard"
-          className="flex-1 bg-purple-950/60 hover:bg-purple-900/60 active:scale-95 text-purple-300 font-bold py-3 rounded-xl text-center transition-all text-sm"
+          className="flex-1 inline-flex items-center justify-center bg-purple-950/60 hover:bg-purple-900/60 active:scale-95 text-purple-300 font-bold py-3 rounded-xl text-center transition-all text-sm"
         >
           Leaderboard
         </a>
@@ -276,7 +293,8 @@ export default function ResultScreen({ result, onRetry, onExit }: Props) {
         onClick={onExit}
         className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border border-white/10 hover:border-white/20 text-gray-400 hover:text-white text-sm font-medium cursor-pointer transition-all bg-white/3 hover:bg-white/8"
       >
-        🏠 Back to Home
+        <Home className="w-4 h-4" strokeWidth={2.5} />
+        Back to Home
       </button>
     </motion.div>
   )
