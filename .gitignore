@@ -67,3 +67,7 @@ IDEA_BACKLOG.md
 !public/og.png
 !public/title-web.png
 .superpowers/
+SECURITY_FIXES.md
+scripts/
+docs/
+agent/
