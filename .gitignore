@@ -64,6 +64,8 @@ IDEA_BACKLOG.md
 *.jpg
 *.jpeg
 !public/favicon.png
+!public/favicon-512.png
+!public/favicon-192.png
 !public/og.png
 !public/title-web.png
 .superpowers/

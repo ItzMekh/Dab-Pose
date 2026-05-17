@@ -1,5 +1,7 @@
 import type { Metadata, Viewport } from 'next'
 import { Geist } from 'next/font/google'
+import { Analytics } from '@vercel/analytics/next'
+import { SpeedInsights } from '@vercel/speed-insights/next'
 import { Providers } from '@/components/Providers'
 import './globals.css'
 
@@ -16,7 +18,14 @@ export const metadata: Metadata = {
   title: 'Dab Pose — How Fast Can You Dab?',
   description: 'Test your dab reaction speed with real-time pose detection.',
   alternates: { canonical: '/' },
-  icons: { icon: '/title-web.png', shortcut: '/title-web.png' },
+  icons: {
+    icon: [
+      { url: '/favicon.svg', type: 'image/svg+xml' },
+      { url: '/favicon-512.png', sizes: '512x512', type: 'image/png' },
+    ],
+    shortcut: '/favicon.svg',
+    apple: '/favicon-192.png',
+  },
   manifest: '/manifest.json',
   openGraph: {
     title: 'Dab Pose — How Fast Can You Dab?',
@@ -38,6 +47,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en" className="dark">
       <body className={geist.className}>
         <Providers>{children}</Providers>
+        <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   )
