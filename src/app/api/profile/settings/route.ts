@@ -5,6 +5,8 @@ import { db } from '@/lib/db'
 import { users, scores } from '@/lib/schema'
 import { eq } from 'drizzle-orm'
 import { rewriteLeaderboardUsername } from '@/lib/rename-leaderboard'
+import { settingsLimiter, passwordChangeLimiter } from '@/lib/ratelimit'
+import { isSameOrigin } from '@/lib/csrf'
 
 const USERNAME_RE = /^[a-zA-Z0-9_]{3,20}$/
 const COUNTRY_RE = /^[A-Z]{2}$/
@@ -20,9 +22,27 @@ function suggestUsernames(base: string): string[] {
 }
 
 export async function PATCH(req: NextRequest) {
+  if (!isSameOrigin(req)) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
+
   const session = await auth()
   if (!session?.user?.id) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
+  try {
+    const rl = await settingsLimiter.limit(session.user.id)
+    if (!rl.success) {
+      const retryAfter = Math.max(1, Math.min(3600, Math.ceil((rl.reset - Date.now()) / 1000)))
+      return NextResponse.json(
+        { error: 'Too many profile edits' },
+        { status: 429, headers: { 'Retry-After': String(retryAfter) } }
+      )
+    }
+  } catch (e) {
+    // Fail open for general settings — anti-spam, not a credential boundary.
+    console.error('[/api/profile/settings] settingsLimiter error:', e)
   }
 
   let body: unknown
@@ -111,6 +131,24 @@ export async function PATCH(req: NextRequest) {
   }
 
   if (field === 'password') {
+    try {
+      const pwRl = await passwordChangeLimiter.limit(session.user.id)
+      if (!pwRl.success) {
+        const retryAfter = Math.max(1, Math.min(3600, Math.ceil((pwRl.reset - Date.now()) / 1000)))
+        return NextResponse.json(
+          { error: 'Too many password change attempts' },
+          { status: 429, headers: { 'Retry-After': String(retryAfter) } }
+        )
+      }
+    } catch (e) {
+      // Fail closed — password change uses bcrypt.compare (expensive). Don't
+      // open that surface during a Redis outage.
+      console.error('[/api/profile/settings] passwordChangeLimiter error:', e)
+      return NextResponse.json(
+        { error: 'Service temporarily unavailable' },
+        { status: 503 }
+      )
+    }
     if (typeof value !== 'string' || value.length < 8) {
       return NextResponse.json({ error: 'Password must be at least 8 characters' }, { status: 400 })
     }
@@ -140,7 +178,11 @@ export async function PATCH(req: NextRequest) {
   return NextResponse.json({ error: 'Unknown field' }, { status: 400 })
 }
 
-export async function DELETE() {
+export async function DELETE(req: NextRequest) {
+  if (!isSameOrigin(req)) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
+
   const session = await auth()
   if (!session?.user?.id) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })

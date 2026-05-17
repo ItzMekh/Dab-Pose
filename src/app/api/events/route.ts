@@ -1,8 +1,31 @@
 import { redis } from '@/lib/redis'
+import { eventsLimiter, clientIpOrFail } from '@/lib/ratelimit'
 
 export const dynamic = 'force-dynamic'
 
-export async function GET() {
+export async function GET(req: Request) {
+  let ip: string
+  try {
+    ip = clientIpOrFail(req)
+  } catch {
+    return new Response('Client IP missing', { status: 400 })
+  }
+
+  try {
+    const rl = await eventsLimiter.limit(ip)
+    if (!rl.success) {
+      const retryAfter = Math.max(1, Math.min(3600, Math.ceil((rl.reset - Date.now()) / 1000)))
+      return new Response('Too many connections', {
+        status: 429,
+        headers: { 'Retry-After': String(retryAfter) },
+      })
+    }
+  } catch (e) {
+    // Fail open for the live-event stream — anti-spam, not a security boundary.
+    // Log so an outage is visible.
+    console.error('[/api/events] ratelimit error, allowing through:', e)
+  }
+
   const encoder = new TextEncoder()
   let cleanupFn: (() => void) | null = null
 
@@ -34,7 +57,11 @@ export async function GET() {
       cleanupFn = () => {
         clearInterval(intervalId)
         clearTimeout(timeoutId)
-        if (!closed) { closed = true; controller.close() }
+        if (!closed) {
+          closed = true
+          // Controller may already be closed if the client aborted — swallow.
+          try { controller.close() } catch {}
+        }
       }
     },
     cancel() {

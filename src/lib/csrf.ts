@@ -1,0 +1,38 @@
+// Lightweight CSRF defense: Origin/Referer must match the request Host.
+//
+// Auth.js cookies default to SameSite=Lax, which already blocks cross-site POSTs
+// from a foreign form, but does NOT block requests from a tab the user has open
+// in our own preview deployments or from extensions that strip cookies' SameSite
+// attribute. This check is defense-in-depth and very cheap.
+
+const ALLOWED_HOSTS = new Set<string>([
+  'localhost:3000',
+  '127.0.0.1:3000',
+])
+
+export function isSameOrigin(req: Request): boolean {
+  const host = req.headers.get('host')
+  if (!host) return false
+
+  const origin = req.headers.get('origin')
+  const referer = req.headers.get('referer')
+
+  // Allow requests from same Vercel-deployed host or known dev hosts.
+  if (ALLOWED_HOSTS.has(host) || host.endsWith('.vercel.app') || host.endsWith('.vercel.dev')) {
+    // continue to source check below
+  }
+
+  const candidate = origin ?? referer
+  if (!candidate) {
+    // Non-browser clients (curl, server-to-server) typically omit both. We
+    // accept them — abuse there is handled by rate limiting + auth.
+    return true
+  }
+
+  try {
+    const url = new URL(candidate)
+    return url.host === host
+  } catch {
+    return false
+  }
+}

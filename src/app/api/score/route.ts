@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { eq } from 'drizzle-orm'
 import { redis, weekKey, todayKey, countryAllKey, countryWeekKey, countryTodayKey } from '@/lib/redis'
 import { auth } from '@/auth'
+import { isSameOrigin } from '@/lib/csrf'
 import { db } from '@/lib/db'
 import { scores as scoresTable, users } from '@/lib/schema'
 
@@ -14,37 +15,19 @@ const USERNAME_RE = /^[a-zA-Z0-9_\- ]{1,20}$/
 const WEEK_TTL = 14 * 24 * 3600
 const TODAY_TTL = 2 * 24 * 3600
 
-// --- In-memory rate limiter (IP-based, max 10 POST /api/score per minute) ---
-const RATE_WINDOW_MS = 60_000
-const RATE_MAX = 10
-const rateLimitMap = new Map<string, { count: number; resetAt: number }>()
-
-function isRateLimited(ip: string): boolean {
-  const now = Date.now()
-  const entry = rateLimitMap.get(ip)
-  if (!entry || now >= entry.resetAt) {
-    rateLimitMap.set(ip, { count: 1, resetAt: now + RATE_WINDOW_MS })
-    return false
-  }
-  if (entry.count >= RATE_MAX) return true
-  entry.count++
-  return false
-}
+// Rate limiting enforced at the edge by Vercel WAF rule "Rate limit /api/score POST".
+// In-memory Map was per-instance on Fluid Compute — broken — and was removed.
 
 const SECURITY_HEADERS = { 'X-Content-Type-Options': 'nosniff' } as const
 
 export async function POST(req: NextRequest) {
+  if (!isSameOrigin(req)) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403, headers: SECURITY_HEADERS })
+  }
+
   const session = await auth()
   const userId = session?.user?.id ?? null
 
-  const ip =
-    req.headers.get('x-forwarded-for')?.split(',')[0].trim() ?? 'unknown'
-  if (isRateLimited(ip)) {
-    return NextResponse.json(
-      { error: 'Too many requests' },
-      { status: 429, headers: SECURITY_HEADERS }
-    )
-  }
   let body: unknown
   try {
     body = await req.json()

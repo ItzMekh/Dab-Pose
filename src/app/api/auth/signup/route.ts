@@ -3,6 +3,7 @@ import { hash } from 'bcryptjs'
 import { db } from '@/lib/db'
 import { users } from '@/lib/schema'
 import { eq } from 'drizzle-orm'
+import { signupLimiter, clientIpOrFail } from '@/lib/ratelimit'
 
 const USERNAME_RE = /^[a-zA-Z0-9_]{3,20}$/
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -18,6 +19,32 @@ function suggestUsernames(base: string, country: string): string[] {
 }
 
 export async function POST(req: NextRequest) {
+  let ip: string
+  try {
+    ip = clientIpOrFail(req)
+  } catch {
+    return NextResponse.json({ error: 'Client IP missing' }, { status: 400 })
+  }
+
+  try {
+    const rl = await signupLimiter.limit(ip)
+    if (!rl.success) {
+      const retryAfter = Math.max(1, Math.min(3600, Math.ceil((rl.reset - Date.now()) / 1000)))
+      return NextResponse.json(
+        { error: 'Too many signup attempts' },
+        { status: 429, headers: { 'Retry-After': String(retryAfter) } }
+      )
+    }
+  } catch (e) {
+    // Fail closed for credential-creation endpoints — better to 503 than to
+    // open the bcrypt CPU DoS surface during a Redis outage.
+    console.error('[/api/auth/signup] ratelimit error:', e)
+    return NextResponse.json(
+      { error: 'Service temporarily unavailable' },
+      { status: 503 }
+    )
+  }
+
   let body: unknown
   try {
     body = await req.json()
