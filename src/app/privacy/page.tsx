@@ -65,7 +65,7 @@ export default function PrivacyPage() {
           <ul className="space-y-2 text-sm leading-relaxed list-disc list-inside">
             <li><strong className="text-white">Change your username</strong> — once per 24 hours from your profile&apos;s Settings tab. Old usernames on the leaderboard are automatically rewritten.</li>
             <li><strong className="text-white">Change your country</strong> — anytime from Settings. Future scores use the new selection.</li>
-            <li><strong className="text-white">Delete your data</strong> — email <a href="mailto:pupha.mekh@gmail.com" className="text-purple-400 hover:text-purple-300 transition-colors">pupha.mekh@gmail.com</a> with the username on your account and we will delete your account, your scores, and your leaderboard entries.</li>
+            <li><strong className="text-white">Delete your account</strong> — sign in and use the &quot;Delete account&quot; button on your profile&apos;s Settings tab. Your account and login data are removed immediately. Past leaderboard entries keep the username you played under so your scores stay on the board; if you also want those removed, <a href="https://github.com/ItzMekh/dab-pose/issues" target="_blank" rel="noopener noreferrer" className="text-purple-400 hover:text-purple-300 transition-colors">open a GitHub issue</a>.</li>
           </ul>
         </section>
 

@@ -62,9 +62,9 @@ export default function TermsPage() {
         <section className="space-y-3">
           <h2 className="text-white font-bold text-xl">4. Accounts</h2>
           <p className="text-sm leading-relaxed">
-            Creating an account is optional — you can submit scores anonymously. If you sign up, you must provide a valid email so we can identify the account in case of a deletion request. You may change your username once every 24 hours and your country at any time from your profile&apos;s Settings tab. You may request deletion of your account and all associated data at any time; see the{' '}
+            Creating an account is optional — you can submit scores anonymously. If you sign up, you may use email + password or Google sign-in. You can change your username once every 24 hours, change your country at any time, and delete your account from your profile&apos;s Settings tab. See the{' '}
             <Link href="/privacy" className="text-purple-400 hover:text-purple-300 transition-colors">Privacy Policy</Link>
-            {' '}for the contact procedure.
+            {' '}for what happens to your leaderboard entries after deletion.
           </p>
         </section>
 
