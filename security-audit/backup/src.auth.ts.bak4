@@ -7,7 +7,6 @@ import { db } from '@/lib/db'
 import { users } from '@/lib/schema'
 import { eq, and, isNull } from 'drizzle-orm'
 import { clientCountryFromHeaders } from '@/lib/client-meta'
-import { redis } from '@/lib/redis'
 
 async function detectCountry(): Promise<string> {
   try {
@@ -103,26 +102,23 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         }
       }
 
-      // Tag-based username refresh. The username PATCH handler bumps a
-      // Redis key u:renametag:<userId> whenever the canonical name changes.
-      // We hit the DB only when the tag diverges from the value last stored
-      // in the JWT — replacing the previous 5s polling loop and dropping
-      // ~12 unnecessary DB reads per minute per active session
-      // (audit C-04). One cheap Redis GET per authenticated request remains.
+      // Background sync — re-pull username from DB at most once every STALE_MS.
+      // Skip during sign-in (user/account/profile present) and explicit update (handled above).
+      const STALE_MS = 5_000
       if (token.id && !user && !account && !profile && trigger !== 'update') {
-        try {
-          const tag = (await redis.get(`u:renametag:${token.id}`)) as string | null
-          if (tag && tag !== token.renameTag) {
+        const last = (token.dbCheckedAt as number | undefined) ?? 0
+        if (Date.now() - last > STALE_MS) {
+          try {
             const [dbUser] = await db
               .select({ username: users.username })
               .from(users)
               .where(and(eq(users.id, token.id as string), isNull(users.deletedAt)))
               .limit(1)
             if (dbUser) token.username = dbUser.username
-            token.renameTag = tag
+          } catch (err) {
+            console.error('[auth] background sync DB error:', err)
           }
-        } catch (err) {
-          console.error('[auth] tagged sync error:', err)
+          token.dbCheckedAt = Date.now()
         }
       }
 
