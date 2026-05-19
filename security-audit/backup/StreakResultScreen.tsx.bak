@@ -15,7 +15,6 @@ interface Props {
   result: StreakResult
   onRetry: () => void
   onExit: () => void
-  playToken: string | null
 }
 
 function getRating(count: number): { label: string; color: string } {
@@ -48,7 +47,7 @@ function RankRow({ icon, label, rank, highlight }: RankRowProps) {
   )
 }
 
-export default function StreakResultScreen({ result, onRetry, onExit, playToken }: Props) {
+export default function StreakResultScreen({ result, onRetry, onExit }: Props) {
   const { username, setUsername, saveUsername } = useUsername()
   const { data: session } = useSession()
   const sessionName = session?.user?.name ?? null
@@ -107,7 +106,6 @@ export default function StreakResultScreen({ result, onRetry, onExit, playToken 
       count: result.count,
       time_ms: result.best_time_ms ?? undefined,
       country,
-      token: playToken ?? undefined,
     })
     setSubmitting(false)
     if (res.ok) {

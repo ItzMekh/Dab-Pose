@@ -80,36 +80,6 @@ export interface SubmitPayload {
   mode?: 'single' | 'streak'
   count?: number
   country?: string  // ISO 3166-1 alpha-2 or 'XX'
-  token?: string    // proof-of-play token from /api/play/start
-}
-
-export interface PlayToken {
-  token: string
-  issuedAt: number
-  ttl: number
-}
-
-/**
- * Request a single-use proof-of-play token from the server. Call this at
- * game-start; the returned token must be passed to `submitScore` so the
- * server can verify the elapsed time. Tokens expire after 60s.
- */
-export async function requestPlayToken(): Promise<PlayToken | null> {
-  try {
-    const res = await fetch('/api/play/start', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      signal: AbortSignal.timeout(3000),
-    })
-    if (!res.ok) return null
-    const data = await res.json()
-    if (typeof data?.token === 'string' && typeof data?.issuedAt === 'number') {
-      return data as PlayToken
-    }
-    return null
-  } catch {
-    return null
-  }
 }
 
 export interface SubmitResult {

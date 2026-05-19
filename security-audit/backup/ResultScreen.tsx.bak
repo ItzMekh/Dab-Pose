@@ -3,8 +3,8 @@
 import { useState, useEffect, useRef, type ReactNode } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useSession } from 'next-auth/react'
-import { RotateCcw, Home, Flame, Crown, Trophy, Calendar, Sparkles } from 'lucide-react'
-import type { StreakResult } from '@/types'
+import { RotateCcw, Home, Trophy, Crown, Calendar, Sparkles } from 'lucide-react'
+import type { GameResult } from '@/types'
 import { submitScore, validateUsername, fetchRankPreview, type RankTriple } from '@/lib/api'
 import { useUsername } from '@/hooks/useUsername'
 import { useStableKeyboardShortcuts } from '@/hooks/useStableKeyboardShortcuts'
@@ -12,18 +12,22 @@ import { useCountry } from '@/hooks/useCountry'
 import CountryChip from './CountryChip'
 
 interface Props {
-  result: StreakResult
+  result: GameResult
   onRetry: () => void
   onExit: () => void
-  playToken: string | null
 }
 
-function getRating(count: number): { label: string; color: string } {
-  if (count >= 20) return { label: 'UNSTOPPABLE', color: 'text-yellow-300' }
-  if (count >= 15) return { label: 'ON FIRE',     color: 'text-orange-400' }
-  if (count >= 10) return { label: 'SPEEDY',      color: 'text-purple-400' }
-  if (count >= 5)  return { label: 'DECENT',      color: 'text-cyan-400'   }
-  return              { label: 'KEEP GOING',   color: 'text-gray-400'   }
+const RATINGS = [
+  { max: 250,      label: 'WORLD CLASS', color: 'text-yellow-300' },
+  { max: 400,      label: 'LEGENDARY',   color: 'text-yellow-400' },
+  { max: 600,      label: 'INSANE',      color: 'text-purple-400' },
+  { max: 800,      label: 'FAST',        color: 'text-cyan-400'   },
+  { max: 1200,     label: 'DECENT',      color: 'text-green-400'  },
+  { max: Infinity, label: 'SLOW',        color: 'text-gray-400'   },
+] as const
+
+function getRating(ms: number) {
+  return RATINGS.find(r => ms < r.max) ?? RATINGS[RATINGS.length - 1]
 }
 
 interface RankRowProps {
@@ -36,19 +40,30 @@ interface RankRowProps {
 function RankRow({ icon, label, rank, highlight }: RankRowProps) {
   const isOne = rank === 1
   return (
-    <div className={`flex items-center justify-between px-4 py-2.5 ${highlight && isOne ? 'bg-orange-400/8' : ''}`}>
+    <div className={`flex items-center justify-between px-4 py-2.5 ${highlight && isOne ? 'bg-yellow-400/8' : ''}`}>
       <span className="flex items-center gap-2 text-gray-300 uppercase tracking-wider text-[11px] font-semibold">
         {icon}
         {label}
       </span>
-      <span className={`tabular-nums font-black text-base ${isOne ? 'text-orange-200' : 'text-white'}`}>
-        {rank === null ? '—' : isOne ? <>#1 <span className="text-xs">🔥</span></> : `#${rank}`}
+      <span className={`tabular-nums font-black text-base ${isOne ? 'text-yellow-300' : 'text-white'}`}>
+        {rank === null ? '—' : isOne ? <>#1 <span className="text-xs">🏆</span></> : `#${rank}`}
       </span>
     </div>
   )
 }
 
-export default function StreakResultScreen({ result, onRetry, onExit, playToken }: Props) {
+function formatTimeDisplay(ms: number): { primary: string; unit: string } {
+  if (ms < 1000) return { primary: ms.toString(), unit: 'ms' }
+  if (ms < 60000) return { primary: (ms / 1000).toFixed(3), unit: 's' }
+  if (ms < 3600000) {
+    const m = Math.floor(ms / 60000)
+    const s = String(Math.floor((ms % 60000) / 1000)).padStart(2, '0')
+    return { primary: `${m}:${s}`, unit: 'min' }
+  }
+  return { primary: (ms / 3600000).toFixed(2), unit: 'hr' }
+}
+
+export default function ResultScreen({ result, onRetry, onExit }: Props) {
   const { username, setUsername, saveUsername } = useUsername()
   const { data: session } = useSession()
   const sessionName = session?.user?.name ?? null
@@ -62,24 +77,26 @@ export default function StreakResultScreen({ result, onRetry, onExit, playToken 
   const [percentile, setPercentile] = useState<number | null>(null)
   const [isKing, setIsKing] = useState(false)
 
-  // Rank preview (pre-submit) + post-submit ranks (from /api/score)
+  // Rank preview (pre-submit) + post-submit ranks (from /api/score response)
   const [previewRanks, setPreviewRanks] = useState<RankTriple | null>(null)
   const [postRanks, setPostRanks] = useState<RankTriple | null>(null)
   const [isNewRecord, setIsNewRecord] = useState(false)
 
-  const rating = getRating(result.count)
+  const rating = getRating(result.time_ms)
+  const timeDisplay = formatTimeDisplay(result.time_ms)
   const showRankOneBanner = (isNewRecord && !submitted) || (isKing && submitted)
   const ranks = submitted ? postRanks : previewRanks
 
   useEffect(() => {
-    fetchRankPreview('streak', result.count)
+    fetchRankPreview('single', result.time_ms)
       .then(r => {
         setPreviewRanks(r)
         setIsNewRecord(r.all === 1)
       })
       .catch(() => { /* rank preview unavailable — silent degradation */ })
-  }, [result.count])
+  }, [result.time_ms])
 
+  // Signed-in: resolve canonical username + saved profile country from DB
   useEffect(() => {
     if (!sessionName) return
     fetch('/api/profile/me', { cache: 'no-store' })
@@ -101,14 +118,7 @@ export default function StreakResultScreen({ result, onRetry, onExit, playToken 
     setValidationErr(null)
     setSubmitErr(null)
     setSubmitting(true)
-    const res = await submitScore({
-      username: nameToSubmit.trim(),
-      mode: 'streak',
-      count: result.count,
-      time_ms: result.best_time_ms ?? undefined,
-      country,
-      token: playToken ?? undefined,
-    })
+    const res = await submitScore({ username: nameToSubmit.trim(), time_ms: result.time_ms, country })
     setSubmitting(false)
     if (res.ok) {
       if (!sessionName) saveUsername(nameToSubmit)
@@ -125,6 +135,10 @@ export default function StreakResultScreen({ result, onRetry, onExit, playToken 
     }
   }
 
+  // Auto-save when a usable identity was already available *at mount*. Signed-in
+  // users always auto-save. Returning guests (cached username in localStorage)
+  // auto-save. First-time guests must press Save / Enter explicitly — typing in
+  // the input no longer triggers a submit on every keystroke.
   const initialUsernameRef = useRef(username)
   const autoSubmitRef = useRef(false)
   useEffect(() => {
@@ -161,7 +175,7 @@ export default function StreakResultScreen({ result, onRetry, onExit, playToken 
             animate={{ scale: 1, opacity: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9 }}
             transition={{ type: 'spring', stiffness: 320, damping: 22 }}
-            className="relative bg-orange-400/10 border border-orange-400/40 rounded-2xl px-4 py-4 overflow-hidden"
+            className="relative bg-yellow-400/10 border border-yellow-400/40 rounded-2xl px-4 py-4 overflow-hidden"
           >
             <AnimatePresence mode="wait" initial={false}>
               {!submitted ? (
@@ -176,12 +190,12 @@ export default function StreakResultScreen({ result, onRetry, onExit, playToken 
                   <motion.div
                     animate={{ scale: [1, 1.18, 1] }}
                     transition={{ repeat: Infinity, duration: 1.4, ease: 'easeInOut' }}
-                    className="text-orange-300"
+                    className="text-yellow-300"
                   >
-                    <Flame className="w-9 h-9" strokeWidth={2.5} />
+                    <Trophy className="w-9 h-9" strokeWidth={2.5} />
                   </motion.div>
-                  <p className="text-orange-200 font-black text-2xl tracking-wide mt-2">NEW RECORD!</p>
-                  <p className="text-orange-400/90 text-xs mt-1">Saving your #1 streak…</p>
+                  <p className="text-yellow-300 font-black text-2xl tracking-wide mt-2">NEW RECORD!</p>
+                  <p className="text-yellow-600/90 text-xs mt-1">Saving your #1 score…</p>
                 </motion.div>
               ) : (
                 <motion.div
@@ -192,9 +206,9 @@ export default function StreakResultScreen({ result, onRetry, onExit, playToken 
                   transition={{ duration: 0.22 }}
                   className="flex flex-col items-center"
                 >
-                  <Crown className="w-8 h-8 text-orange-200" strokeWidth={2.5} />
-                  <p className="text-orange-200 font-black text-xl tracking-wide mt-2">MOST DABS</p>
-                  <p className="text-orange-400 text-xs mt-1">You hold #1 on the leaderboard</p>
+                  <Crown className="w-8 h-8 text-yellow-300" strokeWidth={2.5} />
+                  <p className="text-yellow-300 font-black text-xl tracking-wide mt-2">REFLEX GOD</p>
+                  <p className="text-yellow-500 text-xs mt-1">You hold #1 on the leaderboard</p>
                 </motion.div>
               )}
             </AnimatePresence>
@@ -202,21 +216,26 @@ export default function StreakResultScreen({ result, onRetry, onExit, playToken 
         )}
       </AnimatePresence>
 
+      {/* Score card */}
       <div className="bg-white/5 border border-white/10 backdrop-blur-xl rounded-3xl p-6 space-y-3">
-        <p className={`text-2xl font-black ${rating.color}`}>{rating.label}</p>
+        <p className={`text-2xl font-black tracking-wide ${rating.color}`}>{rating.label}</p>
         <p className="text-5xl sm:text-6xl font-black text-white tabular-nums">
-          {result.count}
-          <span className="text-xl text-gray-500 ml-2 font-normal">dabs</span>
+          {timeDisplay.primary}
+          <span className="text-xl text-gray-500 ml-2 font-normal">{timeDisplay.unit}</span>
         </p>
-        <p className="text-gray-500 text-sm">in 30 seconds</p>
-        {result.best_time_ms !== null && (
-          <p className="text-gray-400 text-xs">Best single: {result.best_time_ms}ms</p>
-        )}
+        <p className="text-gray-500 text-sm">
+          {result.dabArm === 'left' ? 'Left' : 'Right'} arm
+          {timeDisplay.unit === 'ms'
+            ? <> · {(result.time_ms / 1000).toFixed(3)}s</>
+            : <> · {result.time_ms} ms</>
+          }
+        </p>
 
+        {/* Percentile pill — stays visible whenever we have a value */}
         {(percentile !== null || ranks) && (
-          <p className="text-orange-300 text-xs font-semibold pt-1">
+          <p className="text-purple-300 text-xs font-semibold pt-1">
             {percentile !== null
-              ? <>More dabs than <span className="tabular-nums text-orange-200">{percentile}%</span> of players</>
+              ? <>Faster than <span className="tabular-nums text-purple-200">{percentile}%</span> of players</>
               : <>Calculating rank…</>}
           </p>
         )}
@@ -234,14 +253,19 @@ export default function StreakResultScreen({ result, onRetry, onExit, playToken 
           >
             <RankRow icon={<Trophy className="w-4 h-4 text-yellow-300" strokeWidth={2.5} />} label="All Time" rank={ranks.all} />
             <RankRow icon={<Calendar className="w-4 h-4 text-cyan-300" strokeWidth={2.5} />} label="This Week" rank={ranks.week} />
-            <RankRow icon={<Sparkles className="w-4 h-4 text-orange-200" strokeWidth={2.5} />} label="Today" rank={ranks.today} highlight />
+            <RankRow icon={<Sparkles className="w-4 h-4 text-yellow-200" strokeWidth={2.5} />} label="Today" rank={ranks.today} highlight />
           </motion.div>
         )}
       </AnimatePresence>
 
+      {/* Save status — suppressed when #1 banner is owning the saving message */}
       {submitted ? (
         !showRankOneBanner && (
-          <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-green-400 font-semibold text-sm">
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="text-green-400 font-semibold text-sm"
+          >
             Score saved to leaderboard ✓
           </motion.p>
         )
@@ -263,7 +287,7 @@ export default function StreakResultScreen({ result, onRetry, onExit, playToken 
           <button
             onClick={handleSubmit}
             disabled={!username.trim()}
-            className="w-full bg-orange-600 hover:bg-orange-500 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold py-2.5 rounded-xl transition-colors text-sm cursor-pointer"
+            className="w-full bg-purple-600 hover:bg-purple-500 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold py-2.5 rounded-xl transition-colors text-sm cursor-pointer"
           >
             Save to leaderboard
           </button>
@@ -276,12 +300,13 @@ export default function StreakResultScreen({ result, onRetry, onExit, playToken 
       ) : (
         !showRankOneBanner && (
           <p className="text-gray-400 text-sm flex items-center justify-center gap-1.5">
-            <span className="inline-block w-1.5 h-1.5 rounded-full bg-orange-400 animate-pulse" />
+            <span className="inline-block w-1.5 h-1.5 rounded-full bg-purple-400 animate-pulse" />
             Saving as <span className="text-white font-semibold">{effectiveName}</span>…
           </p>
         )
       )}
 
+      {/* Actions */}
       <div className="flex gap-3">
         <button
           onClick={onRetry}

@@ -3,7 +3,6 @@
 import { useState, useCallback, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import type { GameState, GameResult, GameMode, StreakResult } from '@/types'
-import { requestPlayToken, type PlayToken } from '@/lib/api'
 import { transition } from '@/lib/game-state'
 import CameraFeed from './CameraFeed'
 import GameTimer from './GameTimer'
@@ -32,11 +31,6 @@ export default function GameScreen({ mode, onExit }: Props) {
   const [showSwitchArm, setShowSwitchArm] = useState(false)
 
   const [armRaised, setArmRaised] = useState(false)
-
-  // Proof-of-play token — fetched at game-start, single-use, 60s TTL.
-  // Closes audit A-01: /api/score now requires this token, so anonymous
-  // forgery via direct POST is blocked.
-  const [playToken, setPlayToken] = useState<PlayToken | null>(null)
 
   const streakIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const streakStartedRef = useRef(false)
@@ -102,14 +96,6 @@ export default function GameScreen({ mode, onExit }: Props) {
     }
   }, [])
 
-  // Issue a proof-of-play token at game-start. Re-issues on retry because
-  // tokens are single-use (server GETDELs them on score submit).
-  useEffect(() => {
-    if (gameState === 'countdown' && !playToken) {
-      requestPlayToken().then(t => { if (t) setPlayToken(t) })
-    }
-  }, [gameState, playToken])
-
   const handleDabDetected = useCallback((res: GameResult) => {
     if (mode === 'streak') {
       // Reject same-arm dab — reset detector, show banner, stay in signal (no flash)
@@ -171,7 +157,6 @@ export default function GameScreen({ mode, onExit }: Props) {
     floatingDabTimersRef.current.forEach(t => clearTimeout(t))
     floatingDabTimersRef.current.clear()
     setFloatingDabs([])
-    setPlayToken(null)  // re-issued by the countdown-state effect
     go('idle')
   }, [go])
 
@@ -184,7 +169,7 @@ export default function GameScreen({ mode, onExit }: Props) {
     }
     return (
       <div className="fixed inset-0 z-40 bg-[#0a0a0f] flex items-center justify-center overflow-y-auto">
-        <StreakResultScreen result={streakResult} onRetry={handleRetry} onExit={onExit} playToken={playToken?.token ?? null} />
+        <StreakResultScreen result={streakResult} onRetry={handleRetry} onExit={onExit} />
       </div>
     )
   }
@@ -193,7 +178,7 @@ export default function GameScreen({ mode, onExit }: Props) {
   if (mode === 'single' && gameState === 'result' && result) {
     return (
       <div className="fixed inset-0 z-40 bg-[#0a0a0f] flex items-center justify-center overflow-y-auto">
-        <ResultScreen result={result} onRetry={handleRetry} onExit={onExit} playToken={playToken?.token ?? null} />
+        <ResultScreen result={result} onRetry={handleRetry} onExit={onExit} />
       </div>
     )
   }

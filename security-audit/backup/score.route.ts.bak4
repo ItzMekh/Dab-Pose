@@ -36,30 +36,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid JSON' }, { status: 400, headers: SECURITY_HEADERS })
   }
 
-  const { username, time_ms, mode = 'single', count, token } = body as Record<string, unknown>
-
-  // Proof-of-play token — single-use, 60s TTL, verifies elapsed time bounds.
-  // Closes audit A-01: anonymous fabricated scores ({ time_ms: 100 }) no
-  // longer pass because the client must first call /api/play/start and
-  // wait at least time_ms milliseconds before submitting.
-  if (typeof token !== 'string' || token.length < 16) {
-    return NextResponse.json({ error: 'Missing play token' }, { status: 400, headers: SECURITY_HEADERS })
-  }
-  let issuedAt: number
-  try {
-    const raw = (await redis.getdel(`play:tok:${token}`)) as string | null
-    if (!raw) {
-      return NextResponse.json({ error: 'Play token expired or unknown' }, { status: 400, headers: SECURITY_HEADERS })
-    }
-    issuedAt = Number(raw)
-    if (!Number.isFinite(issuedAt)) {
-      return NextResponse.json({ error: 'Corrupt play token' }, { status: 400, headers: SECURITY_HEADERS })
-    }
-  } catch (err) {
-    console.error('[/api/score] play token check error:', err)
-    return NextResponse.json({ error: 'Service temporarily unavailable' }, { status: 503, headers: SECURITY_HEADERS })
-  }
-  const elapsedSinceToken = Date.now() - issuedAt
+  const { username, time_ms, mode = 'single', count } = body as Record<string, unknown>
 
   // Country resolution: an explicit body.country (non-XX) wins because the user
   // may have picked it via CountryChip. When body.country is missing, malformed,
@@ -104,13 +81,6 @@ export async function POST(req: NextRequest) {
   if (mode === 'streak') {
     if (typeof count !== 'number' || !Number.isInteger(count) || count < 0 || count > MAX_COUNT) {
       return NextResponse.json({ error: 'Invalid count' }, { status: 400, headers: SECURITY_HEADERS })
-    }
-    // Streak mode is a 30-second game. Require at least 25s of elapsed
-    // time since the token was issued to reject obvious sub-game-duration
-    // forgery (and also gate against an out-of-band token used long after
-    // the game; redis TTL already caps at 60s).
-    if (elapsedSinceToken < 25_000) {
-      return NextResponse.json({ error: 'Streak submission too soon — game runs 30 seconds' }, { status: 400, headers: SECURITY_HEADERS })
     }
     const bestMs =
       typeof time_ms === 'number' && Number.isInteger(time_ms) && time_ms >= MIN_MS && time_ms <= MAX_MS
@@ -181,12 +151,6 @@ export async function POST(req: NextRequest) {
   // single mode
   if (typeof time_ms !== 'number' || !Number.isInteger(time_ms) || time_ms < MIN_MS || time_ms > MAX_MS) {
     return NextResponse.json({ error: 'Invalid time_ms' }, { status: 400, headers: SECURITY_HEADERS })
-  }
-  // Reaction time cannot exceed the wall-clock elapsed since the token was
-  // issued. 2s of slack covers token issuance → countdown → waiting →
-  // signal latency plus network jitter.
-  if (time_ms > elapsedSinceToken + 2000) {
-    return NextResponse.json({ error: 'Reaction time inconsistent with play session' }, { status: 400, headers: SECURITY_HEADERS })
   }
 
   const member = JSON.stringify({ id, userId, username: user, time_ms, count: null, mode: 'single', created_at: now, country })

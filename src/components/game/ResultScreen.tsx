@@ -15,6 +15,7 @@ interface Props {
   result: GameResult
   onRetry: () => void
   onExit: () => void
+  playToken: string | null
 }
 
 const RATINGS = [
@@ -63,7 +64,7 @@ function formatTimeDisplay(ms: number): { primary: string; unit: string } {
   return { primary: (ms / 3600000).toFixed(2), unit: 'hr' }
 }
 
-export default function ResultScreen({ result, onRetry, onExit }: Props) {
+export default function ResultScreen({ result, onRetry, onExit, playToken }: Props) {
   const { username, setUsername, saveUsername } = useUsername()
   const { data: session } = useSession()
   const sessionName = session?.user?.name ?? null
@@ -118,7 +119,7 @@ export default function ResultScreen({ result, onRetry, onExit }: Props) {
     setValidationErr(null)
     setSubmitErr(null)
     setSubmitting(true)
-    const res = await submitScore({ username: nameToSubmit.trim(), time_ms: result.time_ms, country })
+    const res = await submitScore({ username: nameToSubmit.trim(), time_ms: result.time_ms, country, token: playToken ?? undefined })
     setSubmitting(false)
     if (res.ok) {
       if (!sessionName) saveUsername(nameToSubmit)
