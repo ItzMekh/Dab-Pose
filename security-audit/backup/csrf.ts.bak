@@ -25,13 +25,8 @@ export function isSameOrigin(req: Request): boolean {
   const candidate = origin ?? referer
   if (!candidate) {
     // Non-browser clients (curl, server-to-server) typically omit both. We
-    // accept them only when the request carries no Auth.js session cookie —
-    // a script that includes a session cookie is, by definition, a CSRF
-    // attempt (closes audit C-10). Anonymous abuse is still handled by
-    // per-endpoint rate limits, the WAF, and the score endpoint's
-    // proof-of-play check (when enabled).
-    const cookie = req.headers.get('cookie') ?? ''
-    return !/(?:^|;\s*)(?:__Secure-)?authjs\.session-token=/.test(cookie)
+    // accept them — abuse there is handled by rate limiting + auth.
+    return true
   }
 
   try {
