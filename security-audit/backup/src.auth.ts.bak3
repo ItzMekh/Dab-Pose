@@ -5,7 +5,7 @@ import { compare } from 'bcryptjs'
 import { headers } from 'next/headers'
 import { db } from '@/lib/db'
 import { users } from '@/lib/schema'
-import { eq, and, isNull } from 'drizzle-orm'
+import { eq } from 'drizzle-orm'
 import { clientCountryFromHeaders } from '@/lib/client-meta'
 
 async function detectCountry(): Promise<string> {
@@ -28,7 +28,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         const [user] = await db
           .select()
           .from(users)
-          .where(and(eq(users.email, credentials.email as string), isNull(users.deletedAt)))
+          .where(eq(users.email, credentials.email as string))
           .limit(1)
         if (!user || !user.passwordHash) return null
         const valid = await compare(credentials.password as string, user.passwordHash)
@@ -52,7 +52,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           const [existing] = await db
             .select({ id: users.id, username: users.username })
             .from(users)
-            .where(and(eq(users.email, email), isNull(users.deletedAt)))
+            .where(eq(users.email, email))
             .limit(1)
           if (existing) {
             token.id = existing.id
@@ -88,7 +88,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           const [dbUser] = await db
             .select({ username: users.username })
             .from(users)
-            .where(and(eq(users.id, token.id as string), isNull(users.deletedAt)))
+            .where(eq(users.id, token.id as string))
             .limit(1)
           if (dbUser) {
             token.username = dbUser.username
@@ -112,7 +112,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             const [dbUser] = await db
               .select({ username: users.username })
               .from(users)
-              .where(and(eq(users.id, token.id as string), isNull(users.deletedAt)))
+              .where(eq(users.id, token.id as string))
               .limit(1)
             if (dbUser) token.username = dbUser.username
           } catch (err) {

@@ -3,9 +3,8 @@ import { hash, compare } from 'bcryptjs'
 import { auth } from '@/auth'
 import { db } from '@/lib/db'
 import { users, scores } from '@/lib/schema'
-import { eq, and, isNull } from 'drizzle-orm'
+import { eq } from 'drizzle-orm'
 import { rewriteLeaderboardUsername } from '@/lib/rename-leaderboard'
-import { cookies } from 'next/headers'
 import { settingsLimiter, passwordChangeLimiter } from '@/lib/ratelimit'
 import { isSameOrigin } from '@/lib/csrf'
 
@@ -66,7 +65,7 @@ export async function PATCH(req: NextRequest) {
     const [me] = await db
       .select({ username: users.username, usernameChangedAt: users.usernameChangedAt })
       .from(users)
-      .where(and(eq(users.id, session.user.id), isNull(users.deletedAt)))
+      .where(eq(users.id, session.user.id))
       .limit(1)
     if (!me) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 })
@@ -93,7 +92,7 @@ export async function PATCH(req: NextRequest) {
     const [existing] = await db
       .select({ id: users.id })
       .from(users)
-      .where(and(eq(users.username, value), isNull(users.deletedAt)))
+      .where(eq(users.username, value))
       .limit(1)
     if (existing && existing.id !== session.user.id) {
       return NextResponse.json(
@@ -159,7 +158,7 @@ export async function PATCH(req: NextRequest) {
     const [user] = await db
       .select({ passwordHash: users.passwordHash })
       .from(users)
-      .where(and(eq(users.id, session.user.id), isNull(users.deletedAt)))
+      .where(eq(users.id, session.user.id))
       .limit(1)
     if (!user?.passwordHash) {
       return NextResponse.json(
@@ -188,33 +187,10 @@ export async function DELETE(req: NextRequest) {
   if (!session?.user?.id) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
-
-  // Soft-delete: mark deletedAt, scrub auth fields, keep the row.
-  //
-  // Why soft-delete: hard-deleting frees the username immediately, which
-  // would let another user register the same name and inherit the public
-  // leaderboard entries that still link to it (audit finding C-13).
-  // The row stays so the username remains reserved. A future cron can
-  // hard-delete rows older than 30 days to free the name for re-use.
-  //
-  // Why scramble email + auth fields: removes everything that could let a
-  // ghost session re-authenticate, while keeping the row.
-  await db
-    .update(users)
-    .set({
-      deletedAt: new Date(),
-      email: `deleted+${session.user.id}@local.invalid`,
-      passwordHash: null,
-      googleId: null,
-      avatarUrl: null,
-    })
-    .where(eq(users.id, session.user.id))
-
-  // Invalidate the JWT cookie so the session ends immediately and a ghost
-  // token cannot replay against authenticated endpoints (audit C-11).
-  const cookieStore = await cookies()
-  cookieStore.delete('authjs.session-token')
-  cookieStore.delete('__Secure-authjs.session-token')
-
+  // Just delete the user row. The scores.user_id FK is ON DELETE SET NULL, so
+  // each score row keeps its username + score + country but loses its owner
+  // pointer. Redis leaderboard members are left untouched, so the leaderboard
+  // continues to show the original username after the account is gone.
+  await db.delete(users).where(eq(users.id, session.user.id))
   return NextResponse.json({ ok: true })
 }

@@ -1,13 +1,14 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
+import { auth } from '@/auth'
 import { db } from '@/lib/db'
 import { users, scores } from '@/lib/schema'
-import { eq, and, isNull, min, max, count } from 'drizzle-orm'
+import { eq, min, max, count } from 'drizzle-orm'
 
-export async function GET(
-  _req: NextRequest,
-  { params }: { params: Promise<{ username: string }> }
-) {
-  const { username } = await params
+export async function GET() {
+  const session = await auth()
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
 
   const [user] = await db
     .select({
@@ -18,7 +19,7 @@ export async function GET(
       createdAt: users.createdAt,
     })
     .from(users)
-    .where(and(eq(users.username, username), isNull(users.deletedAt)))
+    .where(eq(users.id, session.user.id))
     .limit(1)
 
   if (!user) {

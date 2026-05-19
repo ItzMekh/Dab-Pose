@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation'
 import { auth } from '@/auth'
 import { db } from '@/lib/db'
 import { users, scores } from '@/lib/schema'
-import { eq, and, isNull, min, max, count } from 'drizzle-orm'
+import { eq, min, max, count } from 'drizzle-orm'
 import ProfileSidebar from '@/components/profile/ProfileSidebar'
 import OverviewTab from '@/components/profile/OverviewTab'
 import HistoryTab from '@/components/profile/HistoryTab'
@@ -19,7 +19,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const [user] = await db
     .select({ id: users.id })
     .from(users)
-    .where(and(eq(users.username, username), isNull(users.deletedAt)))
+    .where(eq(users.username, username))
     .limit(1)
   if (!user) {
     return {
@@ -46,7 +46,7 @@ export default async function ProfilePage({ params, searchParams }: Props) {
   const [user] = await db
     .select()
     .from(users)
-    .where(and(eq(users.username, username), isNull(users.deletedAt)))
+    .where(eq(users.username, username))
     .limit(1)
 
   if (!user) notFound()

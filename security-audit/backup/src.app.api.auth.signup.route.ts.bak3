@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { hash } from 'bcryptjs'
 import { db } from '@/lib/db'
 import { users } from '@/lib/schema'
-import { eq, and, isNull } from 'drizzle-orm'
+import { eq } from 'drizzle-orm'
 import { signupLimiter, clientIpOrFail } from '@/lib/ratelimit'
 import { isSameOrigin } from '@/lib/csrf'
 
@@ -75,7 +75,7 @@ export async function POST(req: NextRequest) {
   const [existingEmail] = await db
     .select({ id: users.id })
     .from(users)
-    .where(and(eq(users.email, email), isNull(users.deletedAt)))
+    .where(eq(users.email, email))
     .limit(1)
   if (existingEmail) {
     return NextResponse.json({ error: 'Email already registered' }, { status: 409 })
@@ -84,7 +84,7 @@ export async function POST(req: NextRequest) {
   const [existingUsername] = await db
     .select({ id: users.id })
     .from(users)
-    .where(and(eq(users.username, username), isNull(users.deletedAt)))
+    .where(eq(users.username, username))
     .limit(1)
   if (existingUsername) {
     const suggestions = suggestUsernames(username, country as string)

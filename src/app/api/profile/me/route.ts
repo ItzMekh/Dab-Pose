@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { auth } from '@/auth'
 import { db } from '@/lib/db'
 import { users, scores } from '@/lib/schema'
-import { eq, min, max, count } from 'drizzle-orm'
+import { eq, and, isNull, min, max, count } from 'drizzle-orm'
 
 export async function GET() {
   const session = await auth()
@@ -19,7 +19,7 @@ export async function GET() {
       createdAt: users.createdAt,
     })
     .from(users)
-    .where(eq(users.id, session.user.id))
+    .where(and(eq(users.id, session.user.id), isNull(users.deletedAt)))
     .limit(1)
 
   if (!user) {

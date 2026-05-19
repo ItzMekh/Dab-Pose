@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { eq, and, isNull } from 'drizzle-orm'
+import { eq } from 'drizzle-orm'
 import { redis, weekKey, todayKey, countryAllKey, countryWeekKey, countryTodayKey } from '@/lib/redis'
 import { auth } from '@/auth'
 import { isSameOrigin } from '@/lib/csrf'
@@ -62,7 +62,7 @@ export async function POST(req: NextRequest) {
     const [dbUser] = await db
       .select({ username: users.username })
       .from(users)
-      .where(and(eq(users.id, userId), isNull(users.deletedAt)))
+      .where(eq(users.id, userId))
       .limit(1)
     if (!dbUser) {
       return NextResponse.json({ error: 'User not found' }, { status: 401, headers: SECURITY_HEADERS })
