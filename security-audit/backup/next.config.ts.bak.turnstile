@@ -14,13 +14,12 @@ import type { NextConfig } from 'next'
 //   the project upgrades to Next.js 16 (which supports it natively).
 const cspDirectives = [
   "default-src 'self'",
-  "script-src 'self' 'unsafe-inline' https://vercel.live https://va.vercel-scripts.com https://challenges.cloudflare.com",
+  "script-src 'self' 'unsafe-inline' https://vercel.live https://va.vercel-scripts.com",
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
   "img-src 'self' data: blob: https://*.googleusercontent.com https://*.vercel.app https://dabpose.fun",
   "font-src 'self' https://fonts.gstatic.com",
   "connect-src 'self' https://vitals.vercel-insights.com https://*.vercel-insights.com",
   "worker-src 'self' blob:",
-  "frame-src https://challenges.cloudflare.com",
   "frame-ancestors 'none'",
   "base-uri 'self'",
   "form-action 'self' https://accounts.google.com",

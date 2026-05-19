@@ -5,7 +5,6 @@ import { signIn } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import AuthBrandPanel from '@/components/auth/AuthBrandPanel'
-import TurnstileWidget from '@/components/auth/TurnstileWidget'
 
 function GoogleIcon() {
   return (
@@ -24,14 +23,12 @@ export default function LoginPage() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
-  const [turnstileToken, setTurnstileToken] = useState<string | null>(null)
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (!turnstileToken) { setError('Verifying you are human… please wait a moment'); return }
     setLoading(true)
     setError(null)
-    const res = await signIn('credentials', { email, password, turnstileToken, redirect: false })
+    const res = await signIn('credentials', { email, password, redirect: false })
     setLoading(false)
     if (res?.error) {
       setError('Invalid email or password')
@@ -91,10 +88,9 @@ export default function LoginPage() {
               className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500 transition-colors"
             />
             {error && <p className="text-red-400 text-sm">{error}</p>}
-            <TurnstileWidget onToken={setTurnstileToken} onError={() => setTurnstileToken(null)} />
             <button
               type="submit"
-              disabled={loading || !turnstileToken}
+              disabled={loading}
               className="w-full bg-purple-600 hover:bg-purple-500 disabled:opacity-50 text-white font-bold py-3 rounded-xl transition-colors"
             >
               {loading ? 'Signing in…' : "Let's dab"}

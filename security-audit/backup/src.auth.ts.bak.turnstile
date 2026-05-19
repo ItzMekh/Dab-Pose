@@ -7,7 +7,6 @@ import { db } from '@/lib/db'
 import { users } from '@/lib/schema'
 import { eq, and, isNull } from 'drizzle-orm'
 import { clientCountryFromHeaders } from '@/lib/client-meta'
-import { verifyTurnstile } from '@/lib/turnstile'
 import { redis } from '@/lib/redis'
 
 async function detectCountry(): Promise<string> {
@@ -24,13 +23,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   providers: [
     Google,
     Credentials({
-      credentials: { email: {}, password: {}, turnstileToken: {} },
+      credentials: { email: {}, password: {} },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) return null
-        // Bot challenge — closes AU-02. Required on every credentials login
-        // so credential-stuffing scripts cannot drive bcrypt CPU load.
-        const tsOk = await verifyTurnstile(credentials.turnstileToken as string | undefined)
-        if (!tsOk) return null
         const [user] = await db
           .select()
           .from(users)

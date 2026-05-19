@@ -4,7 +4,6 @@ import { useState } from 'react'
 import { signIn } from 'next-auth/react'
 import Link from 'next/link'
 import AuthBrandPanel from '@/components/auth/AuthBrandPanel'
-import TurnstileWidget from '@/components/auth/TurnstileWidget'
 import { useCountry } from '@/hooks/useCountry'
 
 function GoogleIcon() {
@@ -27,12 +26,10 @@ export default function SignupPage() {
   const [suggestions, setSuggestions] = useState<string[]>([])
   const [loading, setLoading] = useState(false)
   const [country] = useCountry()
-  const [turnstileToken, setTurnstileToken] = useState<string | null>(null)
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (password !== confirm) { setError('Passwords do not match'); return }
-    if (!turnstileToken) { setError('Verifying you are human… please wait a moment'); return }
     setLoading(true)
     setError(null)
     setSuggestions([])
@@ -40,7 +37,7 @@ export default function SignupPage() {
     const res = await fetch('/api/auth/signup', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username, email, password, country, turnstileToken }),
+      body: JSON.stringify({ username, email, password, country }),
     })
     const data = await res.json()
     setLoading(false)
@@ -50,7 +47,7 @@ export default function SignupPage() {
       if (data.suggestions) setSuggestions(data.suggestions)
       return
     }
-    await signIn('credentials', { email, password, turnstileToken, callbackUrl: '/' })
+    await signIn('credentials', { email, password, callbackUrl: '/' })
   }
 
   return (
@@ -139,10 +136,9 @@ export default function SignupPage() {
               className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500 transition-colors"
             />
             {error && <p className="text-red-400 text-sm">{error}</p>}
-            <TurnstileWidget onToken={setTurnstileToken} onError={() => setTurnstileToken(null)} />
             <button
               type="submit"
-              disabled={loading || !turnstileToken}
+              disabled={loading}
               className="w-full bg-purple-600 hover:bg-purple-500 disabled:opacity-50 text-white font-bold py-3 rounded-xl transition-colors"
             >
               {loading ? 'Creating account…' : "Let's dab"}

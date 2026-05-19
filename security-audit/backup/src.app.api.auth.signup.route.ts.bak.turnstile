@@ -3,9 +3,8 @@ import { hash } from 'bcryptjs'
 import { db } from '@/lib/db'
 import { users } from '@/lib/schema'
 import { eq, and, isNull } from 'drizzle-orm'
-import { signupLimiter, clientIpOrFail, clientIp } from '@/lib/ratelimit'
+import { signupLimiter, clientIpOrFail } from '@/lib/ratelimit'
 import { isSameOrigin } from '@/lib/csrf'
-import { verifyTurnstile } from '@/lib/turnstile'
 
 const USERNAME_RE = /^[a-zA-Z0-9_]{3,20}$/
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -58,13 +57,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 })
   }
 
-  const { username, email, password, country = 'XX', turnstileToken } = body as Record<string, unknown>
-
-  // Bot challenge — closes audit AU-02. Cloudflare Turnstile token must
-  // verify before we touch bcrypt (expensive) or the DB.
-  if (!(await verifyTurnstile(turnstileToken as string | undefined, clientIp(req)))) {
-    return NextResponse.json({ error: 'Bot challenge failed — refresh and try again' }, { status: 403 })
-  }
+  const { username, email, password, country = 'XX' } = body as Record<string, unknown>
 
   if (typeof username !== 'string' || !USERNAME_RE.test(username)) {
     return NextResponse.json(
