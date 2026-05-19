@@ -1,0 +1,288 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Dab Pose — Security Audit Dashboard</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <div class="brand">
+        <span class="brand-mark">🛡️</span>
+        <div>
+          <h1>Dab Pose — Security Audit</h1>
+          <p class="subtitle">2026-05-18 · 80 findings · <span class="domain">dabpose.fun</span></p>
+        </div>
+      </div>
+      <div class="search">
+        <input id="search" type="search" placeholder="🔍 ค้นหา finding, file path, severity, OWASP..." />
+      </div>
+    </div>
+  </header>
+
+  <nav class="tabs">
+    <button data-tab="overview" class="active">📊 ภาพรวม</button>
+    <button data-tab="findings">🔎 Findings</button>
+    <button data-tab="roadmap">🗺️ Roadmap</button>
+    <button data-tab="architecture">🧩 Architecture</button>
+    <button data-tab="deps">📦 Dependencies</button>
+    <button data-tab="glossary">📖 คำย่อ (Glossary)</button>
+  </nav>
+
+  <main>
+    <!-- OVERVIEW -->
+    <section id="overview" class="tab active">
+      <div class="stats">
+        <div class="stat critical">
+          <div class="stat-label">CRITICAL</div>
+          <div class="stat-value">0</div>
+          <div class="stat-hint">ไม่เจอ — ดี</div>
+        </div>
+        <div class="stat high">
+          <div class="stat-label">HIGH</div>
+          <div class="stat-value">4</div>
+          <div class="stat-hint">รีบแก้</div>
+        </div>
+        <div class="stat medium">
+          <div class="stat-label">MEDIUM</div>
+          <div class="stat-value">10</div>
+          <div class="stat-hint">แก้ภายในสัปดาห์-สองสัปดาห์</div>
+        </div>
+        <div class="stat low">
+          <div class="stat-label">LOW</div>
+          <div class="stat-value">12</div>
+          <div class="stat-hint">hygiene / hardening</div>
+        </div>
+        <div class="stat info">
+          <div class="stat-label">INFO / PASS</div>
+          <div class="stat-value">35</div>
+          <div class="stat-hint">23 PASS + 12 INFO</div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2>สรุปผู้บริหาร (Executive Summary)</h2>
+        <p>
+          Dab Pose เป็นเกม reaction-time ผ่าน webcam สร้างด้วย Next.js 15 + React 19 + Auth.js v5 (beta) + Neon Postgres + Upstash Redis + Vercel Fluid Compute มี 11 API routes, 70 source files, 15 direct production dependencies
+        </p>
+        <p>
+          <strong>โดยรวม:</strong> ดีกว่าค่าเฉลี่ยของโปรเจกต์ขนาดนี้ — รอบล่าสุด (<code>SECURITY_FIXES.md</code>) แก้ CSRF + rate-limit + fail-closed ไปแล้ว ที่เหลือคลัสเตอร์ใน 3 จุด:
+        </p>
+        <ol>
+          <li><strong>Browser hardening ขาด</strong> — ไม่มี CSP, ไม่มี X-Frame-Options, ไม่มี Permissions-Policy → ถ้ามี XSS อนาคตจะไม่มี layer 2 ป้องกัน (<a href="#" data-jump="F-01">F-01</a>, <a href="#" data-jump="F-02">F-02</a>, <a href="#" data-jump="F-03">F-03</a>, <a href="#" data-jump="F-11">F-11</a>)</li>
+          <li><strong>Supply chain</strong> — MediaPipe WASM โหลดจาก CDN ไม่มี SRI → ถ้า CDN ถูก hack รัน attacker JS เข้าถึง camera + cookie ได้ (<a href="#" data-jump="C-01">C-01</a> / <a href="#" data-jump="F-04">F-04</a>)</li>
+          <li><strong>Leaderboard integrity</strong> — score endpoint รับ anonymous ไม่มี proof-of-play → POST <code>time_ms:100</code> ผ่าน ทุกคนเป็น #1 ได้ (<a href="#" data-jump="A-01">A-01</a>)</li>
+        </ol>
+        <p><strong>ไม่พบ vulnerability ระดับ Critical exploit ได้ทันที</strong></p>
+      </div>
+
+      <div class="panel">
+        <h2>Top 10 prioritized fixes</h2>
+        <ol class="priority-list">
+          <li><strong>Headers</strong> — เพิ่ม CSP + X-Frame-Options + HSTS + Permissions-Policy ใน <code>next.config.ts</code> · ปิด 4 findings · ใช้เวลา ~1 ชม</li>
+          <li><strong>Self-host MediaPipe WASM</strong> — ดาวน์โหลด bundle ลง <code>public/mediapipe/</code> · ปิด supply-chain risk สูงสุด · ~2 ชม</li>
+          <li><strong>Proof-of-play token</strong> — ใหม่ <code>/api/play/start</code> + ผูกกับ <code>/api/score</code> · ปิด leaderboard forgery · ~3 ชม</li>
+          <li><strong>CSRF บน signup</strong> — เพิ่ม <code>isSameOrigin()</code> ที่ <code>/api/auth/signup</code> · 5 นาที</li>
+          <li><strong>Avatar referrerPolicy</strong> — เพิ่ม <code>referrerPolicy=&quot;no-referrer&quot;</code> 3 จุด · 15 นาที</li>
+          <li><strong>DELETE account invalidation</strong> — ลบ cookie + soft-delete + reserve username · 1 ชม + migration</li>
+          <li><strong>Pin next-auth exact</strong> — ตัด <code>^</code> ใน <code>package.json</code> · 1 นาที</li>
+          <li><strong>CSPRNG username</strong> — <code>crypto.randomUUID()</code> แทน <code>Math.random()</code> · 10 นาที</li>
+          <li><strong>Vercel BotID</strong> — บน signup + login · 1 ชม</li>
+          <li><strong>Next.js 15 → 16 plan</strong> — separate PR · ครึ่งวัน</li>
+        </ol>
+      </div>
+
+      <div class="panel">
+        <h2>ที่ผ่าน (PASS) ที่น่าจดจำ</h2>
+        <ul>
+          <li>✅ <strong>ไม่มี SQL injection</strong> — Drizzle ORM parameterize ทุก query</li>
+          <li>✅ <strong>bcrypt cost 12</strong> — ค่าที่เหมาะกับปี 2026</li>
+          <li>✅ <strong>ไม่มี XSS sink ใน DOM</strong> — ไม่ใช้ raw-HTML props</li>
+          <li>✅ <strong>Owner-only check บน /api/profile/settings</strong> — ใช้ <code>session.user.id</code> ไม่ใช่ path param</li>
+          <li>✅ <strong>Authenticated score: re-resolve username จาก DB</strong> — กัน spoof</li>
+          <li>✅ <strong>Generic login error</strong> — ไม่บอกว่า email ผิดหรือ password ผิด</li>
+          <li>✅ <strong>ไม่มี client-side secret bundled</strong> — ไม่มี <code>NEXT_PUBLIC_*</code></li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- FINDINGS -->
+    <section id="findings" class="tab">
+      <div class="filter-row">
+        <button class="filter active" data-filter="all">ทั้งหมด</button>
+        <button class="filter" data-filter="critical">Critical</button>
+        <button class="filter" data-filter="high">High</button>
+        <button class="filter" data-filter="medium">Medium</button>
+        <button class="filter" data-filter="low">Low</button>
+        <button class="filter" data-filter="info">Info / Pass</button>
+        <button class="filter" data-filter="code">Code</button>
+        <button class="filter" data-filter="auth">Auth</button>
+        <button class="filter" data-filter="api">API</button>
+        <button class="filter" data-filter="frontend">Frontend</button>
+        <button class="filter" data-filter="database">Database</button>
+        <button class="filter" data-filter="infra">Infra</button>
+        <button class="filter" data-filter="dep">Deps</button>
+      </div>
+      <div id="findings-list"></div>
+    </section>
+
+    <!-- ROADMAP -->
+    <section id="roadmap" class="tab">
+      <div class="panel">
+        <h2>Sprint 1 — สัปดาห์นี้ (headers + supply chain)</h2>
+        <ul class="sprint">
+          <li>Apply <code>next.config.ts</code> headers (CSP, X-Frame-Options, HSTS, Permissions-Policy)</li>
+          <li>Self-host MediaPipe WASM</li>
+          <li>Avatar <code>referrerPolicy</code> + URL allowlist</li>
+          <li>CSRF check บน <code>/api/auth/signup</code></li>
+          <li>Pin <code>next-auth</code> exact + pin <code>engines.node</code></li>
+          <li>ลบ <code>@mediapipe/camera_utils</code> + <code>@mediapipe/drawing_utils</code> ที่ไม่ได้ใช้</li>
+          <li>เช็ค Vercel WAF + <code>AUTH_SECRET</code> ใน env</li>
+        </ul>
+        <p class="hint">หลัง Sprint 1: <code>curl -I https://dabpose.fun/</code> ต้องเห็น CSP + X-Frame-Options + HSTS + Permissions-Policy + Referrer-Policy + X-Content-Type-Options. Console clean</p>
+      </div>
+      <div class="panel">
+        <h2>Sprint 2 — สัปดาห์ถัดไป (auth integrity)</h2>
+        <ul class="sprint">
+          <li>DELETE account: invalidate JWT + soft-delete (migration ใหม่ <code>deleted_at</code>)</li>
+          <li>JWT tag-based sync</li>
+          <li>CSPRNG username</li>
+          <li>Vercel BotID</li>
+          <li>CSRF stricter สำหรับ authenticated callers</li>
+          <li>409 ที่ signup unique violation</li>
+          <li>Validate history cursor</li>
+          <li>Unify username regex</li>
+        </ul>
+      </div>
+      <div class="panel">
+        <h2>Sprint 3 — สองสัปดาห์ (leaderboard integrity)</h2>
+        <ul class="sprint">
+          <li>Proof-of-play token (<code>/api/play/start</code> + client + server)</li>
+          <li>Light limiter บน public reads</li>
+          <li>Lower SSE cap + emit error event</li>
+          <li>Email verification gate</li>
+        </ul>
+      </div>
+      <div class="panel">
+        <h2>Sprint 4+ — เลื่อนได้</h2>
+        <ul class="sprint">
+          <li>Next.js 15 → 16</li>
+          <li>Migrate to <code>vercel.ts</code></li>
+          <li>Move CSRF + rate-limit + headers ไป Routing Middleware</li>
+          <li>Adopt <code>zod</code> validation</li>
+          <li>Consolidate avatar ใน <code>&lt;UserAvatar&gt;</code></li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- ARCHITECTURE -->
+    <section id="architecture" class="tab">
+      <div class="panel">
+        <h2>Stack</h2>
+        <table class="tbl">
+          <tr><th>Layer</th><th>Technology</th></tr>
+          <tr><td>Framework</td><td>Next.js 15.5.18 (App Router, Turbopack)</td></tr>
+          <tr><td>UI</td><td>React 19 + Framer Motion + Tailwind v4</td></tr>
+          <tr><td>Auth</td><td>Auth.js v5 (next-auth 5.0.0-beta.31) — Google + Credentials</td></tr>
+          <tr><td>ORM</td><td>Drizzle ORM 0.45 + Neon Postgres</td></tr>
+          <tr><td>Cache / leaderboard</td><td>Upstash Redis (REST)</td></tr>
+          <tr><td>Rate limit</td><td>@upstash/ratelimit 2.0 (sliding window)</td></tr>
+          <tr><td>Password</td><td>bcryptjs cost 12</td></tr>
+          <tr><td>Pose detection</td><td>MediaPipe Holistic 0.5 (WASM, jsdelivr CDN)</td></tr>
+          <tr><td>Hosting</td><td>Vercel (Fluid Compute, Node 24)</td></tr>
+          <tr><td>WAF</td><td>Vercel WAF (3 rules, Hobby plan)</td></tr>
+        </table>
+      </div>
+
+      <div class="panel">
+        <h2>Endpoint surface</h2>
+        <table class="tbl">
+          <tr><th>Path</th><th>Methods</th><th>Auth</th><th>Rate limit</th><th>CSRF guard</th></tr>
+          <tr><td>/api/auth/[...nextauth]</td><td>GET, POST</td><td>internal</td><td>—</td><td>internal</td></tr>
+          <tr><td>/api/auth/signup</td><td>POST</td><td>none</td><td>5/60s/IP fail-closed</td><td class="bad">none</td></tr>
+          <tr><td>/api/score</td><td>POST</td><td>optional</td><td>WAF 30/60s/IP</td><td>✓</td></tr>
+          <tr><td>/api/leaderboard</td><td>GET</td><td>none</td><td>—</td><td>—</td></tr>
+          <tr><td>/api/stats</td><td>GET</td><td>none</td><td>—</td><td>—</td></tr>
+          <tr><td>/api/events (SSE)</td><td>GET</td><td>none</td><td>10/60s/IP fail-open</td><td>—</td></tr>
+          <tr><td>/api/country/detect</td><td>GET</td><td>none</td><td>—</td><td>—</td></tr>
+          <tr><td>/api/profile/[username]</td><td>GET</td><td>none</td><td>—</td><td>—</td></tr>
+          <tr><td>/api/profile/[username]/history</td><td>GET</td><td>none</td><td>—</td><td>—</td></tr>
+          <tr><td>/api/profile/me</td><td>GET</td><td>required</td><td>—</td><td>—</td></tr>
+          <tr><td>/api/profile/settings</td><td>PATCH, DELETE</td><td>required</td><td>10/60s/user (pw 3/300s)</td><td>✓</td></tr>
+        </table>
+      </div>
+
+      <div class="panel">
+        <h2>Trust boundaries</h2>
+        <ul>
+          <li><strong>Browser ↔ Vercel edge</strong> — WAF + rate-limit · bypass: IP rotation</li>
+          <li><strong>Vercel edge ↔ Function</strong> — auth + Origin + regex · ok</li>
+          <li><strong>Function ↔ Postgres</strong> — Drizzle parameterized · SQLi ไม่ feasible</li>
+          <li><strong>Function ↔ Redis</strong> — JSON.stringify on write · safe as long as server controls input</li>
+          <li class="warn"><strong>Function ↔ MediaPipe CDN</strong> — ไม่มี SRI · CDN compromise = camera + DOM hijack</li>
+          <li><strong>Browser ↔ Google avatar URL</strong> — raw img src · bounded but leaks Referer ที่ 2/3 callsites</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- DEPS -->
+    <section id="deps" class="tab">
+      <div class="panel">
+        <h2>npm audit (2026-05-18)</h2>
+        <table class="tbl">
+          <tr><th>Severity</th><th>Count</th></tr>
+          <tr><td>Critical</td><td>0</td></tr>
+          <tr><td>High</td><td>0</td></tr>
+          <tr><td>Moderate</td><td>4</td></tr>
+          <tr><td>Low</td><td>0</td></tr>
+        </table>
+        <p>ทุก finding อยู่ในเส้น <code>drizzle-kit → @esbuild-kit/* → esbuild ≤ 0.24.2</code> (GHSA-67mh-4wv8-2f99). Dev-only. กระทบจริงน้อยมาก เพราะ drizzle-kit ไม่ได้ run dev server บน network port</p>
+      </div>
+
+      <div class="panel">
+        <h2>Outdated direct dependencies</h2>
+        <table class="tbl">
+          <tr><th>Package</th><th>Installed</th><th>Latest</th><th>Risk</th></tr>
+          <tr><td>next</td><td>15.5.18</td><td>16.2.6</td><td class="med">Medium — backport lag</td></tr>
+          <tr><td>next-auth</td><td>5.0.0-beta.31</td><td>(beta line)</td><td class="med">Medium — beta + caret</td></tr>
+          <tr><td>framer-motion</td><td>11.18.2</td><td>12.38.0</td><td class="lo">Low — no known CVE</td></tr>
+          <tr><td>lucide-react</td><td>0.511.0</td><td>1.16.0</td><td class="lo">Low</td></tr>
+          <tr><td>eslint</td><td>9.39.4</td><td>10.4.0</td><td class="info">dev only</td></tr>
+          <tr><td>typescript</td><td>5.9.3</td><td>6.0.3</td><td class="info">dev only</td></tr>
+        </table>
+      </div>
+
+      <div class="panel">
+        <h2>Direct production deps (15)</h2>
+        <p>next · react · react-dom · next-auth · @neondatabase/serverless · drizzle-orm · @upstash/redis · @upstash/ratelimit · bcryptjs · @mediapipe/holistic · @mediapipe/camera_utils <span class="del">(unused)</span> · @mediapipe/drawing_utils <span class="del">(unused)</span> · framer-motion · lucide-react · class-variance-authority/clsx/tailwind-merge · @vercel/analytics · @vercel/speed-insights</p>
+      </div>
+
+      <div class="panel">
+        <h2>Supply chain trust</h2>
+        <ul>
+          <li><strong>npmjs.com</strong> — primary registry, trusted</li>
+          <li class="warn"><strong>jsdelivr CDN</strong> — MediaPipe WASM loaded at runtime, no SRI · highest item</li>
+          <li><strong>Google OAuth + avatar URL</strong> — trusted by spec, raw <code>img src</code> rendered (validate + referrerPolicy recommended)</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- GLOSSARY -->
+    <section id="glossary" class="tab">
+      <div class="panel intro-panel">
+        <h2>📖 คำย่อ + คำศัพท์ใน report</h2>
+        <p>ตารางคำศัพท์เรียงตาม alphabet — เปิด tab นี้ค้างขณะอ่าน findings ได้</p>
+      </div>
+      <div class="glossary" id="glossary-list"></div>
+    </section>
+  </main>
+
+  <footer>
+    <p>Generated 2026-05-18 by Claude (Opus 4.7) under owner authorization · No source files were modified · See <code>/security-audit/</code> for raw markdown</p>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
