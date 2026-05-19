@@ -11,18 +11,24 @@
 
 const COUNTRY_RE = /^[A-Z]{2}$/
 
+function resolveCountry(cf: string | null | undefined, vercel: string | null | undefined): string {
+  // If the Cloudflare proxy is in front, CF-IPCountry is authoritative for
+  // the visitor's geo. Don't fall back to the Vercel header — Vercel sees the
+  // Cloudflare egress IP, not the real client, so its country is meaningless.
+  // CF returns "T1" for Tor exits and "XX" for unknown; both normalize to XX.
+  if (cf) {
+    const c = cf.toUpperCase()
+    return COUNTRY_RE.test(c) && c !== 'XX' && c !== 'T1' ? c : 'XX'
+  }
+  // No CF header → Vercel is the only edge in front of us, trust it.
+  const v = vercel?.toUpperCase() ?? ''
+  return COUNTRY_RE.test(v) ? v : 'XX'
+}
+
 export function clientCountry(req: Request): string {
-  const cf = req.headers.get('cf-ipcountry')?.toUpperCase() ?? ''
-  if (COUNTRY_RE.test(cf) && cf !== 'XX' && cf !== 'T1') return cf
-  const v = req.headers.get('x-vercel-ip-country')?.toUpperCase() ?? ''
-  if (COUNTRY_RE.test(v)) return v
-  return 'XX'
+  return resolveCountry(req.headers.get('cf-ipcountry'), req.headers.get('x-vercel-ip-country'))
 }
 
 export function clientCountryFromHeaders(h: Headers): string {
-  const cf = h.get('cf-ipcountry')?.toUpperCase() ?? ''
-  if (COUNTRY_RE.test(cf) && cf !== 'XX' && cf !== 'T1') return cf
-  const v = h.get('x-vercel-ip-country')?.toUpperCase() ?? ''
-  if (COUNTRY_RE.test(v)) return v
-  return 'XX'
+  return resolveCountry(h.get('cf-ipcountry'), h.get('x-vercel-ip-country'))
 }
