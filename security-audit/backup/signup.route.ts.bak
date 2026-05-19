@@ -4,7 +4,6 @@ import { db } from '@/lib/db'
 import { users } from '@/lib/schema'
 import { eq } from 'drizzle-orm'
 import { signupLimiter, clientIpOrFail } from '@/lib/ratelimit'
-import { isSameOrigin } from '@/lib/csrf'
 
 const USERNAME_RE = /^[a-zA-Z0-9_]{3,20}$/
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -20,10 +19,6 @@ function suggestUsernames(base: string, country: string): string[] {
 }
 
 export async function POST(req: NextRequest) {
-  if (!isSameOrigin(req)) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-  }
-
   let ip: string
   try {
     ip = clientIpOrFail(req)

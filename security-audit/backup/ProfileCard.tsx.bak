@@ -61,7 +61,6 @@ export default function ProfileCard({ username, avatarUrl }: Props) {
             <img
               src={avatarUrl}
               alt={displayName}
-              referrerPolicy="no-referrer"
               className="w-10 h-10 sm:w-12 sm:h-12 rounded-full object-cover"
             />
           ) : (
