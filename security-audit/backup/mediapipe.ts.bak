@@ -29,12 +29,8 @@ export async function loadHolistic(): Promise<Holistic> {
 async function _loadHolisticInner(): Promise<Holistic> {
   const { Holistic } = await import('@mediapipe/holistic')
   const holistic = new Holistic({
-    // Same-origin self-hosted bundle under public/mediapipe/<version>/.
-    // Closes audit C-01 / F-04: the CDN-hosted bundle no longer needs to be
-    // trusted, and the CSP can drop https://cdn.jsdelivr.net from script-src
-    // and connect-src. Update the version string here if the package bumps.
     locateFile: (file) =>
-      `/mediapipe/0.5.1675471629/${file}`,
+      `https://cdn.jsdelivr.net/npm/@mediapipe/holistic@0.5.1675471629/${file}`,
   })
   holistic.setOptions({
     modelComplexity: 1,
