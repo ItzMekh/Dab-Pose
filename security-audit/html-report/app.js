@@ -6,7 +6,7 @@ const HTML_PROP = ["inner", "HTML"].join("");
 
 const FINDINGS = [
   // ===== Code =====
-  { tag: "C-01", domain: "code", sev: "high", title: "MediaPipe WASM loaded from CDN without SRI",
+  { tag: "C-01", closed: true, domain: "code", sev: "high", title: "MediaPipe WASM loaded from CDN without SRI",
     files: ["src/lib/mediapipe.ts:32-33", "src/components/game/CameraFeed.tsx"],
     desc: "WASM bundle ดึงจาก cdn.jsdelivr.net โดยไม่มี Subresource Integrity (SRI) hash. ถ้า CDN ถูก hack → attacker JS รันใน origin เรา → เข้าถึง camera + cookie + DOM ได้",
     fix: "Self-host bundle ใต้ public/mediapipe/ (option 1, แนะนำ) หรือ lock CSP + manual SHA-384 verify (option 2, ฝืน)" },
@@ -18,7 +18,7 @@ const FINDINGS = [
     files: ["src/app/api/score/route.ts:94, 160", "src/app/api/leaderboard/route.ts:56"],
     desc: "Members เป็น JSON.stringify(snapshot). Encode side trusted แต่ read side ไม่ validate — ถ้า member ถูก poison จากเส้นทางอื่นจะ propagate",
     fix: "เพิ่ม zod (หรือ validator มือเขียน) ก่อน merge เข้า HTTP response" },
-  { tag: "C-04", domain: "code", sev: "medium", title: "JWT background DB sync amplifies DB load",
+  { tag: "C-04", closed: true, domain: "code", sev: "medium", title: "JWT background DB sync amplifies DB load",
     files: ["src/auth.ts:106-123"],
     desc: "ทุก authenticated request → DB read username ถ้า dbCheckedAt เก่าเกิน 5s. ผู้ใช้คนเดียวยิง endpoint รัวๆ = ~12 DB queries/min",
     fix: "Tag-based invalidation ผ่าน Redis key u:renametag:<userId> — เซตเฉพาะตอน rename" },
@@ -34,7 +34,7 @@ const FINDINGS = [
     files: ["src/lib/ratelimit.ts:53-60"],
     desc: "ถ้า migrate ไป non-Vercel host แล้วลืมแก้ — fallback ไป 'dev-local' ใช้ bucket เดียวกันหมด",
     fix: "เพิ่ม env explicit PRODUCTION_REQUIRES_IP" },
-  { tag: "C-08", domain: "code", sev: "low", title: "x-forwarded-for parsed verbatim",
+  { tag: "C-08", closed: true, domain: "code", sev: "low", title: "x-forwarded-for parsed verbatim",
     files: ["src/lib/ratelimit.ts:40-48"],
     desc: "ใช้บน Vercel ปลอดภัย. host migration risk เท่านั้น",
     fix: "Document assumption + ใช้ x-real-ip ก่อน" },
@@ -42,11 +42,11 @@ const FINDINGS = [
     files: ["src/lib/csrf.ts:20-24"],
     desc: "Block if (host.endsWith('.vercel.app') ...) ว่างเปล่า — ไม่มีผล. หลอกผู้อ่าน",
     fix: "ลบทิ้ง หรือใช้จริงเพื่อ short-circuit preview deployments" },
-  { tag: "C-10", domain: "code", sev: "medium", title: "CSRF check returns true เมื่อ Origin+Referer ขาด",
+  { tag: "C-10", closed: true, domain: "code", sev: "medium", title: "CSRF check returns true เมื่อ Origin+Referer ขาด",
     files: ["src/lib/csrf.ts:25-31"],
     desc: "Non-browser client (curl) ผ่านได้. รวมกับ /api/score รับ anonymous → spam ได้",
     fix: "Tighten: ถ้ามี session cookie แล้วไม่มี Origin/Referer → reject" },
-  { tag: "C-11", domain: "code", sev: "medium", title: "DELETE account ไม่ invalidate JWT cookie",
+  { tag: "C-11", closed: true, domain: "code", sev: "medium", title: "DELETE account ไม่ invalidate JWT cookie",
     files: ["src/app/api/profile/settings/route.ts:181-196", "src/auth.ts:106-123"],
     desc: "หลังลบ user row, cookie ยังใช้ได้จน expire. Ghost session — ถูก hijack ระยะนี้ได้",
     fix: "cookieStore.delete('authjs.session-token') ก่อน return + tombstone set (optional)" },
@@ -54,7 +54,7 @@ const FINDINGS = [
     files: ["src/app/api/auth/signup/route.ts:70-87, 94"],
     desc: "สอง signup parallel ที่ email/username เดียวกัน — SELECT ผ่านทั้งคู่ → INSERT failure ไม่ catch → 500 generic",
     fix: "try/catch unique violation (PG 23505) → 409" },
-  { tag: "C-13", domain: "code", sev: "medium", title: "Account-recycle impersonation",
+  { tag: "C-13", closed: true, domain: "code", sev: "medium", title: "Account-recycle impersonation",
     files: ["src/app/api/profile/settings/route.ts:181-196"],
     desc: "ลบ account → username free → คนใหม่ register ได้ → leaderboard rows (ON DELETE SET NULL) ยังลิงก์ไปยัง profile ที่แปลงเจ้าของแล้ว",
     fix: "Soft-delete + reserve username 30 วัน (เพิ่ม deleted_at column)" },
@@ -84,11 +84,11 @@ const FINDINGS = [
     files: ["signup + login forms"],
     desc: "Credential stuffing บน /api/auth/callback/credentials. bcrypt cost 12 = ~250ms CPU/guess = DoS amplification",
     fix: "Vercel BotID + per-email limiter ใน Auth.js callback" },
-  { tag: "AU-03", domain: "auth", sev: "medium", title: "next-auth ^5.0.0-beta.31 (caret on beta)",
+  { tag: "AU-03", closed: true, domain: "auth", sev: "medium", title: "next-auth ^5.0.0-beta.31 (caret on beta)",
     files: ["package.json:28"],
     desc: "Caret ดึง beta ใหม่ได้ตอน npm install → break cookies ระหว่าง release",
     fix: "Pin exact: \"next-auth\": \"5.0.0-beta.31\"" },
-  { tag: "AU-07", domain: "auth", sev: "low", title: "Google avatar URL render raw img src",
+  { tag: "AU-07", closed: true, domain: "auth", sev: "low", title: "Google avatar URL render raw img src",
     files: ["src/components/profile/ProfileSidebar.tsx:61,99", "src/components/landing/ProfileCard.tsx:61"],
     desc: "ไม่มี referrerPolicy บน 2/3 จุด → leak Referer ไป Google",
     fix: "referrerPolicy=\"no-referrer\" ทุกที่ + validate avatar URL allowlist" },
@@ -126,7 +126,7 @@ const FINDINGS = [
     fix: "—" },
 
   // ===== API =====
-  { tag: "A-01", domain: "api", sev: "high", title: "Anonymous score submission — no proof-of-play",
+  { tag: "A-01", closed: true, domain: "api", sev: "high", title: "Anonymous score submission — no proof-of-play",
     files: ["src/app/api/score/route.ts:23-219"],
     desc: "POST { time_ms: 100 } ได้ทันที. Leaderboard integrity เสียทั้งหมด — WAF rate-limit IP-rotation defeat ได้",
     fix: "ออก HMAC token ที่ /api/play/start, single-use redis key, verify บน /api/score" },
@@ -142,7 +142,7 @@ const FINDINGS = [
     files: ["src/app/api/profile/[username]/history/route.ts"],
     desc: "ใครก็ pagination ดูประวัติคนอื่นได้. Privacy hygiene เท่านั้น",
     fix: "เพิ่ม setting profile.history.public" },
-  { tag: "A-05", domain: "api", sev: "info", title: "x-vercel-ip-country trust",
+  { tag: "A-05", closed: true, domain: "api", sev: "info", title: "x-vercel-ip-country trust",
     files: ["src/app/api/score/route.ts:50", "src/app/api/country/detect/route.ts:5"],
     desc: "Vercel เซ็ตเอง — strip inbound. Document migration risk",
     fix: "—" },
@@ -154,7 +154,7 @@ const FINDINGS = [
     files: ["src/app/api/score/route.ts:102-123"],
     desc: "Cost concern (Upstash bill per op). ไม่ใช่ security",
     fix: "Batch country ZINCRBY+EXPIRE ผ่าน Lua script (EVALSHA)" },
-  { tag: "A-08", domain: "api", sev: "medium", title: "No CSRF check ที่ /api/auth/signup",
+  { tag: "A-08", closed: true, domain: "api", sev: "medium", title: "No CSRF check ที่ /api/auth/signup",
     files: ["src/app/api/auth/signup/route.ts:21"],
     desc: "Drive-by signup จาก attacker page ทำได้ — rate limit กันแค่ volume",
     fix: "เพิ่ม isSameOrigin(req) ที่ top" },
@@ -176,23 +176,23 @@ const FINDINGS = [
     fix: "—" },
 
   // ===== Frontend =====
-  { tag: "F-01", domain: "frontend", sev: "high", title: "No Content Security Policy (CSP)",
+  { tag: "F-01", closed: true, domain: "frontend", sev: "high", title: "No Content Security Policy (CSP)",
     files: ["next.config.ts", "vercel.json", "src/app/layout.tsx"],
     desc: "ไม่มี CSP header เลย → ถ้ามี XSS อนาคต ไม่มี layer 2 ป้องกัน injected script",
     fix: "เพิ่ม headers() ใน next.config.ts (default-src 'self' + script-src + frame-ancestors 'none' + ...)" },
-  { tag: "F-02", domain: "frontend", sev: "high", title: "No X-Frame-Options — clickjacking risk",
+  { tag: "F-02", closed: true, domain: "frontend", sev: "high", title: "No X-Frame-Options — clickjacking risk",
     files: ["all pages"],
     desc: "ใส่ iframe + overlay → หลอกขอ camera permission ได้",
     fix: "X-Frame-Options: DENY + frame-ancestors 'none' ใน CSP" },
-  { tag: "F-03", domain: "frontend", sev: "medium", title: "No HSTS in-app",
+  { tag: "F-03", closed: true, domain: "frontend", sev: "medium", title: "No HSTS in-app",
     files: ["next.config.ts"],
     desc: "Vercel platform เซ็ต HSTS อยู่แล้ว แต่ in-app silent → defense in depth ขาด",
     fix: "Strict-Transport-Security: max-age=63072000; includeSubDomains; preload" },
-  { tag: "F-04", domain: "frontend", sev: "high", title: "MediaPipe WASM cross-origin no SRI (= C-01)",
+  { tag: "F-04", closed: true, domain: "frontend", sev: "high", title: "MediaPipe WASM cross-origin no SRI (= C-01)",
     files: ["src/lib/mediapipe.ts"],
     desc: "ดู C-01",
     fix: "ดู C-01" },
-  { tag: "F-05", domain: "frontend", sev: "low", title: "Avatar img no referrerPolicy (= AU-07)",
+  { tag: "F-05", closed: true, domain: "frontend", sev: "low", title: "Avatar img no referrerPolicy (= AU-07)",
     files: ["src/components/profile/ProfileSidebar.tsx", "src/components/landing/ProfileCard.tsx"],
     desc: "ดู AU-07",
     fix: "เพิ่ม referrerPolicy=\"no-referrer\"" },
@@ -216,7 +216,7 @@ const FINDINGS = [
     files: ["next.config.ts"],
     desc: "ไม่ opt-in productionBrowserSourceMaps → ไม่ ship maps to prod. Verify บน live",
     fix: "ตรวจ Network panel ว่าไม่มี .map files" },
-  { tag: "F-11", domain: "frontend", sev: "medium", title: "No Permissions-Policy",
+  { tag: "F-11", closed: true, domain: "frontend", sev: "medium", title: "No Permissions-Policy",
     files: ["next.config.ts"],
     desc: "ไม่จำกัด camera/microphone/geolocation — embedded iframe ขอ permission inherit ได้",
     fix: "Permissions-Policy: camera=(self), microphone=(), geolocation=()" },
@@ -238,7 +238,7 @@ const FINDINGS = [
     files: ["—"],
     desc: "Neon เซ็ต encrypted volume by default. ยังไม่ใช้ column-level encryption — ยอมรับได้",
     fix: "ถ้าเก็บข้อมูล sensitive อนาคต: pgcrypto pgp_sym_encrypt" },
-  { tag: "D-05", domain: "database", sev: "medium", title: "ON DELETE SET NULL → account-recycle (= C-13)",
+  { tag: "D-05", closed: true, domain: "database", sev: "medium", title: "ON DELETE SET NULL → account-recycle (= C-13)",
     files: ["src/lib/schema.ts:17"],
     desc: "ดู C-13",
     fix: "ดู C-13" },
@@ -264,7 +264,7 @@ const FINDINGS = [
     fix: "—" },
 
   // ===== Infra =====
-  { tag: "I-01", domain: "infra", sev: "high", title: "Missing platform headers (= F-01..F-03)",
+  { tag: "I-01", closed: true, domain: "infra", sev: "high", title: "Missing platform headers (= F-01..F-03)",
     files: ["next.config.ts", "vercel.json"],
     desc: "ดู F-01..F-03, F-11",
     fix: "ดู F-01" },
@@ -310,15 +310,15 @@ const FINDINGS = [
     files: ["package.json:27"],
     desc: "Installed 15.5.18, latest 16.2.6. Security backport lag",
     fix: "Plan upgrade ผ่าน vercel:next-upgrade skill" },
-  { tag: "DP-03", domain: "dep", sev: "medium", title: "next-auth ^5.0.0-beta.31 (= AU-03)",
+  { tag: "DP-03", closed: true, domain: "dep", sev: "medium", title: "next-auth ^5.0.0-beta.31 (= AU-03)",
     files: ["package.json:28"],
     desc: "ดู AU-03",
     fix: "Pin exact" },
-  { tag: "DP-04", domain: "dep", sev: "high", title: "MediaPipe CDN no SRI (= C-01)",
+  { tag: "DP-04", closed: true, domain: "dep", sev: "high", title: "MediaPipe CDN no SRI (= C-01)",
     files: ["src/lib/mediapipe.ts"],
     desc: "ดู C-01",
     fix: "Self-host" },
-  { tag: "DP-05", domain: "dep", sev: "info", title: "Unused MediaPipe helper packages",
+  { tag: "DP-05", closed: true, domain: "dep", sev: "info", title: "Unused MediaPipe helper packages",
     files: ["package.json:13-14"],
     desc: "@mediapipe/camera_utils + @mediapipe/drawing_utils ไม่ได้ import ที่ไหนเลย",
     fix: "npm uninstall @mediapipe/camera_utils @mediapipe/drawing_utils" },
@@ -403,7 +403,8 @@ const DOMAIN_LABELS = {
 function buildFindingCard(f) {
   const sevLabel = f.sev.toUpperCase();
   const isPass = (f.title.indexOf("✓") !== -1);
-  const sevClass = isPass ? "sev-pass" : "sev-" + f.sev;
+  const isClosed = f.closed === true;
+  const sevClass = isClosed ? "sev-pass" : (isPass ? "sev-pass" : "sev-" + f.sev);
   const filesBlock = (f.files.length && f.files[0] !== "—")
     ? '<div class="files">' + f.files.map(x => "• " + x).join("<br />") + '</div>'
     : "";
@@ -415,7 +416,7 @@ function buildFindingCard(f) {
       '<div class="finding-header">' +
         '<span class="finding-tag">' + f.tag + '</span>' +
         '<span class="finding-title">' + f.title + '</span>' +
-        '<span class="sev-pill ' + sevClass + '">' + (isPass ? "PASS" : sevLabel) + '</span>' +
+        '<span class="sev-pill ' + sevClass + '">' + (isClosed ? "CLOSED" : (isPass ? "PASS" : sevLabel)) + '</span>' +
         '<span class="finding-domain">' + (DOMAIN_LABELS[f.domain] || f.domain) + '</span>' +
       '</div>' +
       '<div class="finding-body">' +

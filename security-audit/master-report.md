@@ -20,6 +20,48 @@ The remaining findings cluster in three areas:
 
 No critical-severity exploitable vulnerability was found.
 
+## Progress — 2026-05-19 (one day after audit)
+
+Closed 22 findings via 9 commits on `main`. **Zero High remain.**
+
+```
+af1a13b  security: proof-of-play token — close anonymous score forgery (A-01)
+4162938  security: CSRF stricter for authenticated callers (C-10)
+c60c63b  security: tag-based JWT username refresh (C-04)
+eb77f20  security: soft-delete accounts + invalidate JWT on DELETE (C-11, C-13, D-05)
+985ac26  security: self-host MediaPipe Holistic (C-01, F-04, DP-04)
+2edb273  security: quick wins bundle (A-08, AU-07, F-05, DP-05, DP-03, AU-03)
+3e2784a  security: add CSP + clickjacking + HSTS + Permissions-Policy (F-01, F-02, F-03, F-11, I-01)
+74ec4bd  docs(security): audit + Cloudflare migration runbook
+2b7dfec  security: Cloudflare-aware client IP + country resolution (C-08, A-05)
+```
+
+Verified on production (`curl -I https://dabpose.fun/`) after deploy:
+
+- CSP, X-Frame-Options DENY, HSTS preload, Permissions-Policy, Referrer-Policy, X-Content-Type-Options — all present.
+- `/mediapipe/0.5.1675471629/holistic.binarypb` and the WASM bundle serve same-origin (HTTP 200).
+- `/api/score` rejects requests without a play token (HTTP 400 "Missing play token").
+- `/api/play/start` issues fresh tokens.
+
+Schema migration applied to Neon production: `drizzle/0001_users_deleted_at.sql`.
+
+| Severity | At audit | Today | Closed |
+|---|---|---|---|
+| Critical | 0 | 0 | — |
+| **High** | 4 | **0** ✓ | **4** |
+| **Medium** | 10 | 4 | 6 |
+| **Low** | 12 | 9 | 3 |
+| Info/Pass | 35 | 36 | 1 |
+
+Remaining items are owner-coordinated or single-line hygiene:
+- **AU-01** Email verification — needs an email provider choice
+- **AU-02** Vercel BotID / Cloudflare Bot Fight Mode — owner toggles in the dashboard
+- **DP-02** Next.js 15 → 16 — separate PR
+- **I-06** Vercel WAF rule audit — owner runs `vercel firewall rules ls`
+- Low-severity Code items (C-02, C-05, C-06, C-07, C-09, C-12, C-14, C-16, C-17) — hygiene queue
+
+---
+
 ## Risk dashboard
 
 | Severity | Count | Items |
