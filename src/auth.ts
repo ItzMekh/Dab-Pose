@@ -6,12 +6,12 @@ import { headers } from 'next/headers'
 import { db } from '@/lib/db'
 import { users } from '@/lib/schema'
 import { eq } from 'drizzle-orm'
+import { clientCountryFromHeaders } from '@/lib/client-meta'
 
 async function detectCountry(): Promise<string> {
   try {
     const h = await headers()
-    const code = h.get('x-vercel-ip-country')
-    if (code && /^[A-Z]{2}$/.test(code)) return code
+    return clientCountryFromHeaders(h)
   } catch {
     // headers() may not be available in some auth contexts — fall through.
   }

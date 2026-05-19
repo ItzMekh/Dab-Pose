@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { clientCountry } from '@/lib/client-meta'
 
 export async function GET(req: NextRequest) {
-  // Vercel sets this header automatically from IP geolocation
-  const country = req.headers.get('x-vercel-ip-country') ?? 'XX'
-  // 'XX' means unknown/undetectable (VPN, missing header in dev)
+  // Cloudflare-aware: prefers CF-IPCountry, falls back to x-vercel-ip-country.
+  // 'XX' means unknown/undetectable (VPN, missing header in dev, Cloudflare T1 = Tor).
+  const country = clientCountry(req)
   return NextResponse.json(
-    { country: country.toUpperCase() },
+    { country },
     {
       headers: {
         'Cache-Control': 'no-store',

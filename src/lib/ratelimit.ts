@@ -38,6 +38,10 @@ export const eventsLimiter = new Ratelimit({
 })
 
 export function clientIp(req: Request): string | null {
+  // dabpose.fun sits behind a Cloudflare proxy. CF-Connecting-IP is the real
+  // visitor IP; x-forwarded-for's first hop is now Cloudflare itself.
+  const cf = req.headers.get('cf-connecting-ip')
+  if (cf && cf.length > 0) return cf.trim()
   const fwd = req.headers.get('x-forwarded-for')
   if (fwd) {
     const first = fwd.split(',')[0].trim()

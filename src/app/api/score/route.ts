@@ -3,6 +3,7 @@ import { eq } from 'drizzle-orm'
 import { redis, weekKey, todayKey, countryAllKey, countryWeekKey, countryTodayKey } from '@/lib/redis'
 import { auth } from '@/auth'
 import { isSameOrigin } from '@/lib/csrf'
+import { clientCountry } from '@/lib/client-meta'
 import { db } from '@/lib/db'
 import { scores as scoresTable, users } from '@/lib/schema'
 
@@ -47,13 +48,8 @@ export async function POST(req: NextRequest) {
     typeof rawCountry === 'string' && /^[A-Z]{2}$/i.test(rawCountry)
       ? rawCountry.toUpperCase()
       : 'XX'
-  const headerCountry = req.headers.get('x-vercel-ip-country')?.toUpperCase() ?? ''
-  const country =
-    bodyCountry !== 'XX'
-      ? bodyCountry
-      : /^[A-Z]{2}$/.test(headerCountry)
-        ? headerCountry
-        : 'XX'
+  const headerCountry = clientCountry(req)
+  const country = bodyCountry !== 'XX' ? bodyCountry : headerCountry
 
   if (mode !== 'single' && mode !== 'streak') {
     return NextResponse.json({ error: 'Invalid mode' }, { status: 400, headers: SECURITY_HEADERS })
