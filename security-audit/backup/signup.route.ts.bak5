@@ -96,27 +96,10 @@ export async function POST(req: NextRequest) {
     ? country.toUpperCase().slice(0, 2)
     : 'XX'
 
-  let user: { id: string; username: string }
-  try {
-    const [created] = await db
-      .insert(users)
-      .values({ email, username, passwordHash, country: countryCode })
-      .returning({ id: users.id, username: users.username })
-    user = created
-  } catch (err: unknown) {
-    // Pre-check filters soft-deleted rows (isNull(deletedAt)) so the user is
-    // told "available" — but the DB-level UNIQUE constraint counts every row,
-    // including soft-deleted ones. Translate that race / collision into 409.
-    const code = (err as { code?: string } | null)?.code
-    if (code === '23505') {
-      return NextResponse.json(
-        { error: 'Username or email no longer available — try a different value' },
-        { status: 409 }
-      )
-    }
-    console.error('[/api/auth/signup] insert failed:', err)
-    throw err
-  }
+  const [user] = await db
+    .insert(users)
+    .values({ email, username, passwordHash, country: countryCode })
+    .returning({ id: users.id, username: users.username })
 
   return NextResponse.json({ id: user.id, username: user.username }, { status: 201 })
 }
