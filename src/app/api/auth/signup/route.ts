@@ -107,10 +107,16 @@ export async function POST(req: NextRequest) {
     // Pre-check filters soft-deleted rows (isNull(deletedAt)) so the user is
     // told "available" — but the DB-level UNIQUE constraint counts every row,
     // including soft-deleted ones. Translate that race / collision into 409.
-    const code = (err as { code?: string } | null)?.code
+    //
+    // Drizzle wraps the underlying NeonDbError; the Postgres SQLSTATE lives on
+    // `err.cause.code`. Check both shapes so a future driver change is robust.
+    const e = err as { code?: string; cause?: { code?: string; constraint?: string } } | null
+    const code = e?.code ?? e?.cause?.code
+    const constraint = e?.cause?.constraint
     if (code === '23505') {
+      const which = constraint?.includes('email') ? 'Email' : constraint?.includes('username') ? 'Username' : 'Username or email'
       return NextResponse.json(
-        { error: 'Username or email no longer available — try a different value' },
+        { error: `${which} no longer available — try a different value` },
         { status: 409 }
       )
     }
