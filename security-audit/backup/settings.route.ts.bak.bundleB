@@ -6,7 +6,6 @@ import { users, scores } from '@/lib/schema'
 import { eq, and, isNull } from 'drizzle-orm'
 import { rewriteLeaderboardUsername } from '@/lib/rename-leaderboard'
 import { redis } from '@/lib/redis'
-import { checkPassword } from '@/lib/password'
 import { cookies } from 'next/headers'
 import { settingsLimiter, passwordChangeLimiter } from '@/lib/ratelimit'
 import { isSameOrigin } from '@/lib/csrf'
@@ -165,12 +164,8 @@ export async function PATCH(req: NextRequest) {
         { status: 503 }
       )
     }
-    if (typeof value !== 'string') {
-      return NextResponse.json({ error: 'Password is required' }, { status: 400 })
-    }
-    const pwCheck = await checkPassword(value)
-    if (!pwCheck.ok) {
-      return NextResponse.json({ error: pwCheck.error ?? 'Invalid password' }, { status: 400 })
+    if (typeof value !== 'string' || value.length < 8) {
+      return NextResponse.json({ error: 'Password must be at least 8 characters' }, { status: 400 })
     }
     if (typeof currentPassword !== 'string') {
       return NextResponse.json({ error: 'Current password required' }, { status: 400 })

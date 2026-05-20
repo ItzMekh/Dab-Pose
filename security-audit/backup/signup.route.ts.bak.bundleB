@@ -6,7 +6,6 @@ import { eq, and, isNull } from 'drizzle-orm'
 import { signupLimiter, clientIpOrFail, clientIp } from '@/lib/ratelimit'
 import { isSameOrigin } from '@/lib/csrf'
 import { verifyTurnstile } from '@/lib/turnstile'
-import { checkPassword } from '@/lib/password'
 
 const USERNAME_RE = /^[a-zA-Z0-9_]{3,20}$/
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -81,12 +80,8 @@ export async function POST(req: NextRequest) {
   if (typeof email !== 'string' || !EMAIL_RE.test(email)) {
     return NextResponse.json({ error: 'Invalid email' }, { status: 400 })
   }
-  if (typeof password !== 'string') {
-    return NextResponse.json({ error: 'Password is required' }, { status: 400 })
-  }
-  const pwCheck = await checkPassword(password)
-  if (!pwCheck.ok) {
-    return NextResponse.json({ error: pwCheck.error ?? 'Invalid password' }, { status: 400 })
+  if (typeof password !== 'string' || password.length < 8) {
+    return NextResponse.json({ error: 'Password must be at least 8 characters' }, { status: 400 })
   }
 
   const [existingEmail] = await db
