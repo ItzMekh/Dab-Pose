@@ -69,8 +69,11 @@ Schema migration applied to Neon production: `drizzle/0001_users_deleted_at.sql`
 
 Remaining items:
 - **AU-01** Email verification — needs an email provider choice (Resend / Postmark / Vercel email)
-- **DP-02** Next.js 15 → 16 — separate upgrade PR via `vercel:next-upgrade`
-- Low-severity Code items (C-02, C-05, C-06, C-07, C-09, C-14, C-16, C-17) — hygiene queue (C-12 closed 2026-05-20)
+- Low-severity Code items (C-02, C-05, C-06, C-07, C-09, C-14, C-16, C-17) — hygiene queue
+
+### 2026-05-20 — also closed today
+
+- **DP-02** Next.js 15.5.18 → 16.2.6 via PR #4 (squash-merged). Codemod ran 0 file changes. Side fix: lazy-init Neon DB client through a Proxy because Next 16's "collecting page data" build phase evaluates route modules without runtime env, and the previous top-level `neon(process.env.DATABASE_URL!)` threw at build time. Production smoke 8/8 green; CF proxy + Turnstile + soft-delete flows verified.
 
 ---
 

@@ -306,7 +306,7 @@ const FINDINGS = [
     files: ["package-lock.json"],
     desc: "4 moderate ใน chain drizzle-kit → @esbuild-kit/* → esbuild ≤ 0.24.2 (GHSA-67mh-4wv8-2f99). Dev only — drizzle-kit ไม่ run dev server network-reachable",
     fix: "รอ upstream drizzle-kit drop @esbuild-kit/* (tsx loader)" },
-  { tag: "DP-02", domain: "dep", sev: "medium", title: "Next.js major version lag (15 → 16)",
+  { tag: "DP-02", closed: true, domain: "dep", sev: "medium", title: "Next.js major version lag (15 → 16)",
     files: ["package.json:27"],
     desc: "Installed 15.5.18, latest 16.2.6. Security backport lag",
     fix: "Plan upgrade ผ่าน vercel:next-upgrade skill" },
