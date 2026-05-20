@@ -29,11 +29,7 @@ export async function GET(
     conditions.push(eq(scores.mode, mode))
   }
   if (cursor) {
-    const d = new Date(cursor)
-    if (Number.isNaN(d.getTime())) {
-      return NextResponse.json({ error: 'Invalid cursor' }, { status: 400 })
-    }
-    conditions.push(lt(scores.createdAt, d))
+    conditions.push(lt(scores.createdAt, new Date(cursor)))
   }
 
   const items = await db

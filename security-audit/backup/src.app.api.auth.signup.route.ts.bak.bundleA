@@ -13,15 +13,10 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 function suggestUsernames(base: string, country: string): string[] {
   const b = base.slice(0, 17)
   const c = country === 'XX' ? 'user' : country.toLowerCase()
-  const rand = () => {
-    const buf = new Uint32Array(1)
-    crypto.getRandomValues(buf)
-    return buf[0]
-  }
   return [
-    `${b}${10 + (rand() % 90)}`,
+    `${b}${Math.floor(Math.random() * 90 + 10)}`,
     `${b}_${c}`,
-    `${b}${100 + (rand() % 900)}`,
+    `${b}${Math.floor(Math.random() * 900 + 100)}`,
   ]
 }
 

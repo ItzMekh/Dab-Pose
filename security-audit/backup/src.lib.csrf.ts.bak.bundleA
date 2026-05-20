@@ -17,11 +17,10 @@ export function isSameOrigin(req: Request): boolean {
   const origin = req.headers.get('origin')
   const referer = req.headers.get('referer')
 
-  // (Originally a host allowlist short-circuit lived here — removed
-  //  because the body always falls through to the source-check below.
-  //  The dev/preview hosts in ALLOWED_HOSTS are kept around for
-  //  potential future opt-in logic but currently have no effect.)
-  void ALLOWED_HOSTS  // keep symbol live for tooling
+  // Allow requests from same Vercel-deployed host or known dev hosts.
+  if (ALLOWED_HOSTS.has(host) || host.endsWith('.vercel.app') || host.endsWith('.vercel.dev')) {
+    // continue to source check below
+  }
 
   const candidate = origin ?? referer
   if (!candidate) {

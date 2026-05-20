@@ -68,7 +68,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
               .toLowerCase()
               .replace(/[^a-z0-9_]/g, '')
               .slice(0, 16) || 'user'
-            const username = `${base}_${crypto.randomUUID().slice(0, 4)}`
+            const username = `${base}_${Math.random().toString(36).slice(2, 6)}`
             const country = await detectCountry()
             const [newUser] = await db
               .insert(users)

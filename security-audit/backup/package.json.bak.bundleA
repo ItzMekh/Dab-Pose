@@ -47,8 +47,5 @@
     "postcss": ">=8.5.10",
     "@types/react": "19.2.15",
     "@types/react-dom": "19.2.3"
-  },
-  "engines": {
-    "node": ">=20.0.0 <27.0.0"
   }
 }

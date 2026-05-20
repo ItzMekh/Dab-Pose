@@ -10,7 +10,7 @@ import { scores as scoresTable, users } from '@/lib/schema'
 const MIN_MS = 100
 const MAX_MS = 30_000
 const MAX_COUNT = 300 // 30 s × 10 dabs/s — physically impossible to exceed
-const USERNAME_RE = /^[a-zA-Z0-9_]{3,20}$/
+const USERNAME_RE = /^[a-zA-Z0-9_\- ]{1,20}$/
 
 // TTL: week key lives 14 days, today key lives 2 days
 const WEEK_TTL = 14 * 24 * 3600
