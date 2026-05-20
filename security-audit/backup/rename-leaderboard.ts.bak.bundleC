@@ -1,5 +1,4 @@
 import { redis, weekKey, todayKey } from './redis'
-import { z } from 'zod'
 
 const LEADERBOARD_KEYS = (): string[] => [
   'lb:single:all',
@@ -10,12 +9,12 @@ const LEADERBOARD_KEYS = (): string[] => [
   `lb:streak:today:${todayKey()}`,
 ]
 
-const MemberSchema = z.object({
-  id: z.string().optional(),
-  userId: z.string().uuid().nullable().optional(),
-  username: z.string().optional(),
-}).passthrough()  // allow time_ms / count / mode / created_at / country to pass through
-type Member = z.infer<typeof MemberSchema>
+type Member = {
+  id?: string
+  userId?: string | null
+  username?: string
+  [k: string]: unknown
+}
 
 export async function rewriteLeaderboardUsername(
   userId: string,
@@ -36,10 +35,7 @@ export async function rewriteLeaderboardUsername(
       scanned++
       let parsed: Member
       try {
-        const raw = JSON.parse(oldMember)
-        const r = MemberSchema.safeParse(raw)
-        if (!r.success) continue
-        parsed = r.data
+        parsed = JSON.parse(oldMember) as Member
       } catch {
         continue
       }

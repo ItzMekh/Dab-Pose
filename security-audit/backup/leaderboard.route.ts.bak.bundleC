@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { inArray, and, isNull } from 'drizzle-orm'
-import { z } from 'zod'
 import { redis, weekKey, todayKey, countryAllKey, countryWeekKey, countryTodayKey } from '@/lib/redis'
 import { db } from '@/lib/db'
 import { users } from '@/lib/schema'
@@ -44,29 +43,17 @@ export async function GET(req: NextRequest) {
   // single: ascending (lowest time_ms = rank #1)
   // streak: descending (highest count = rank #1)
   const raw = await redis.zrange(key, 0, 99, leaderMode === 'streak' ? { rev: true } : {}) as string[]
-  // Zod-validate every Redis member before merging into the HTTP
-  // response (audit C-03). Members are server-controlled today, but
-  // this is cheap defense in depth: a malformed member is silently
-  // dropped from the response instead of propagating bad data to the
-  // client (or causing a 500 inside Drizzle's inArray UUID parse).
-  const ScoreMember = z.object({
-    id: z.string(),
-    username: z.string(),
-    time_ms: z.number().nullable(),
-    count: z.number().nullable(),
-    mode: z.enum(['single', 'streak']),
-    created_at: z.string(),
-    country: z.string().optional(),
-    userId: z.string().uuid().nullable().optional(),
-  })
-  type ParsedScore = z.infer<typeof ScoreMember>
-  const parsed: ParsedScore[] = raw.flatMap(m => {
-    if (typeof m !== 'string') return []
-    try {
-      const r = ScoreMember.safeParse(JSON.parse(m))
-      return r.success ? [r.data] : []
-    } catch { return [] }
-  })
+  type ParsedScore = {
+    id: string
+    username: string
+    time_ms: number | null
+    count: number | null
+    mode: 'single' | 'streak'
+    created_at: string
+    country?: string
+    userId?: string | null
+  }
+  const parsed: ParsedScore[] = raw.map(m => (typeof m === 'string' ? JSON.parse(m) : m))
 
   // Augment each entry with `verified` (the account still exists in DB) and
   // the user's avatarUrl, so the leaderboard can render a link + avatar + ✓
