@@ -74,6 +74,12 @@ Remaining items:
 ### 2026-05-20 — also closed today
 
 - **DP-02** Next.js 15.5.18 → 16.2.6 via PR #4 (squash-merged). Codemod ran 0 file changes. Side fix: lazy-init Neon DB client through a Proxy because Next 16's "collecting page data" build phase evaluates route modules without runtime env, and the previous top-level `neon(process.env.DATABASE_URL!)` threw at build time. Production smoke 8/8 green; CF proxy + Turnstile + soft-delete flows verified.
+- **Bundle A (5)** — C-02 CSPRNG username gen, C-09 dead code in csrf.ts, C-14 history cursor validation, AU-10 unified username regex, DP-06 engines.node pinned.
+- **Bundle B (1)** — C-17 HIBP k-anonymity password breach check + min length 10 on signup + password change.
+- **Bundle C (2)** — C-03 zod-validate Redis members on leaderboard read + rename rewriter, AU-08 Auth.js `pages.error` → `/login` to suppress default `/api/auth/error` info disclosure.
+- **Bundle D (2)** — C-16 `logError(scope, err, meta)` helper with PII redaction across 7 callsites; I-07 husky pre-commit hook running `gitleaks protect --staged` (fail-soft when gitleaks not installed).
+
+**Final state**: 0 Critical · 0 High · 1 Medium (AU-01) · 3 Low remaining.
 
 ---
 
