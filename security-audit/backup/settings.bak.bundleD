@@ -2,7 +2,6 @@ import { type NextRequest, NextResponse } from 'next/server'
 import { hash, compare } from 'bcryptjs'
 import { auth } from '@/auth'
 import { db } from '@/lib/db'
-import { logError } from '@/lib/log'
 import { users, scores } from '@/lib/schema'
 import { eq, and, isNull } from 'drizzle-orm'
 import { rewriteLeaderboardUsername } from '@/lib/rename-leaderboard'
@@ -51,7 +50,7 @@ export async function PATCH(req: NextRequest) {
     }
   } catch (e) {
     // Fail open for general settings — anti-spam, not a credential boundary.
-    logError('/api/profile/settings', e, { context: 'settingsLimiter error' })
+    console.error('[/api/profile/settings] settingsLimiter error:', e)
   }
 
   let body: unknown
@@ -125,7 +124,7 @@ export async function PATCH(req: NextRequest) {
     try {
       leaderboard = await rewriteLeaderboardUsername(session.user.id, me.username, value)
     } catch (err) {
-      logError('settings', err, { context: 'leaderboard rewrite failed' })
+      console.error('[settings] leaderboard rewrite failed:', err)
     }
 
     // 3) Bump the rename tag so the JWT callback picks up the new username on
@@ -133,7 +132,7 @@ export async function PATCH(req: NextRequest) {
     try {
       await redis.set(`u:renametag:${session.user.id}`, crypto.randomUUID(), { ex: 86400 })
     } catch (err) {
-      logError('settings', err, { context: 'rename tag set failed' })
+      console.error('[settings] rename tag set failed:', err)
     }
 
     return NextResponse.json({ ok: true, username: value, leaderboard })
@@ -160,7 +159,7 @@ export async function PATCH(req: NextRequest) {
     } catch (e) {
       // Fail closed — password change uses bcrypt.compare (expensive). Don't
       // open that surface during a Redis outage.
-      logError('/api/profile/settings', e, { context: 'passwordChangeLimiter error' })
+      console.error('[/api/profile/settings] passwordChangeLimiter error:', e)
       return NextResponse.json(
         { error: 'Service temporarily unavailable' },
         { status: 503 }

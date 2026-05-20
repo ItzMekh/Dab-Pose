@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { redis } from '@/lib/redis'
+import { logError } from '@/lib/log'
 import { isSameOrigin } from '@/lib/csrf'
 
 // Proof-of-play token issuer.
@@ -28,7 +29,7 @@ export async function POST(req: NextRequest) {
   try {
     await redis.set(`play:tok:${token}`, String(issuedAt), { ex: TOKEN_TTL_SEC })
   } catch (err) {
-    console.error('[/api/play/start] Redis set error:', err)
+    logError('/api/play/start', err, { context: 'Redis set error' })
     return NextResponse.json(
       { error: 'Service temporarily unavailable' },
       { status: 503 }

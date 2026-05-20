@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "test": "playwright test"
+    "test": "playwright test",
+    "prepare": "husky 2>/dev/null || true"
   },
   "dependencies": {
     "@mediapipe/holistic": "^0.5.1675471629",
@@ -42,7 +43,8 @@
     "eslint": "^9",
     "eslint-config-next": "16.2.6",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "husky": "^9.1.7"
   },
   "overrides": {
     "postcss": ">=8.5.10",

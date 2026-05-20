@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { hash } from 'bcryptjs'
 import { db } from '@/lib/db'
-import { logError } from '@/lib/log'
 import { users } from '@/lib/schema'
 import { eq, and, isNull } from 'drizzle-orm'
 import { signupLimiter, clientIpOrFail, clientIp } from '@/lib/ratelimit'
@@ -51,7 +50,7 @@ export async function POST(req: NextRequest) {
   } catch (e) {
     // Fail closed for credential-creation endpoints — better to 503 than to
     // open the bcrypt CPU DoS surface during a Redis outage.
-    logError('/api/auth/signup', e, { context: 'ratelimit error' })
+    console.error('[/api/auth/signup] ratelimit error:', e)
     return NextResponse.json(
       { error: 'Service temporarily unavailable' },
       { status: 503 }
@@ -138,7 +137,7 @@ export async function POST(req: NextRequest) {
         { status: 409 }
       )
     }
-    logError('/api/auth/signup', err, { context: 'insert failed' })
+    console.error('[/api/auth/signup] insert failed:', err)
     throw err
   }
 

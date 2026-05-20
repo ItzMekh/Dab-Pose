@@ -1,5 +1,4 @@
 import { redis } from '@/lib/redis'
-import { logError } from '@/lib/log'
 import { eventsLimiter, clientIpOrFail } from '@/lib/ratelimit'
 
 export const dynamic = 'force-dynamic'
@@ -24,7 +23,7 @@ export async function GET(req: Request) {
   } catch (e) {
     // Fail open for the live-event stream — anti-spam, not a security boundary.
     // Log so an outage is visible.
-    logError('/api/events', e, { context: 'ratelimit error, allowing through' })
+    console.error('[/api/events] ratelimit error, allowing through:', e)
   }
 
   const encoder = new TextEncoder()
@@ -48,7 +47,7 @@ export async function GET(req: Request) {
             controller.enqueue(encoder.encode(': ping\n\n'))
           }
         } catch (e) {
-          logError('/api/events', e, { context: 'Redis error' })
+          console.error('[/api/events] Redis error:', e)
           cleanupFn?.()
         }
       }, 2000)

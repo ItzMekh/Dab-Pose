@@ -4,7 +4,6 @@ import Google from 'next-auth/providers/google'
 import { compare } from 'bcryptjs'
 import { headers } from 'next/headers'
 import { db } from '@/lib/db'
-import { logError } from '@/lib/log'
 import { users } from '@/lib/schema'
 import { eq, and, isNull } from 'drizzle-orm'
 import { clientCountryFromHeaders } from '@/lib/client-meta'
@@ -86,7 +85,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             token.needsUsernameSetup = true
           }
         } catch (err) {
-          logError('auth', err, { context: 'Google JWT callback DB error' })
+          console.error('[auth] Google JWT callback DB error:', err)
         }
       }
       // Session update — refresh username from DB, clear flags
@@ -102,7 +101,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             token.dbCheckedAt = Date.now()
           }
         } catch (err) {
-          logError('auth', err, { context: 'session update DB error' })
+          console.error('[auth] session update DB error:', err)
         }
         if ((updateData as { needsUsernameSetup?: boolean })?.needsUsernameSetup === false) {
           token.needsUsernameSetup = false
@@ -128,7 +127,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             token.renameTag = tag
           }
         } catch (err) {
-          logError('auth', err, { context: 'tagged sync error' })
+          console.error('[auth] tagged sync error:', err)
         }
       }
 

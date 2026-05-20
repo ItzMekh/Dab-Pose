@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { eq, and, isNull } from 'drizzle-orm'
 import { redis, weekKey, todayKey, countryAllKey, countryWeekKey, countryTodayKey } from '@/lib/redis'
-import { logError } from '@/lib/log'
 import { auth } from '@/auth'
 import { isSameOrigin } from '@/lib/csrf'
 import { clientCountry } from '@/lib/client-meta'
@@ -57,7 +56,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Corrupt play token' }, { status: 400, headers: SECURITY_HEADERS })
     }
   } catch (err) {
-    logError('/api/score', err, { context: 'play token check error' })
+    console.error('[/api/score] play token check error:', err)
     return NextResponse.json({ error: 'Service temporarily unavailable' }, { status: 503, headers: SECURITY_HEADERS })
   }
   const elapsedSinceToken = Date.now() - issuedAt
