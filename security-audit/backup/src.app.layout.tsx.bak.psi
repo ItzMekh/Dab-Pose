@@ -10,7 +10,7 @@ const geist = Geist({ subsets: ['latin'] })
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
-  // No maximumScale — users with low vision must be able to zoom (a11y).
+  maximumScale: 1,
 }
 
 export const metadata: Metadata = {

@@ -8,13 +8,7 @@ import { useSession } from 'next-auth/react'
 import type { GameMode } from '@/types'
 import { useRealtimeVersion } from '@/hooks/useRealtimeVersion'
 import ProfileCard from './ProfileCard'
-import dynamic from 'next/dynamic'
-
-// Lazy-load: only fetched when a Google first-time sign-in needs to
-// choose a username — most landing visits never load this chunk.
-const UsernameSetupModal = dynamic(() => import('./UsernameSetupModal'), {
-  ssr: false,
-})
+import UsernameSetupModal from './UsernameSetupModal'
 
 interface Props {
   onStart: (mode: GameMode) => void
@@ -95,7 +89,7 @@ export default function LandingScreen({ onStart }: Props) {
                 👤
               </div>
               <p className="text-white text-xs font-bold leading-tight text-center">Sign in</p>
-              <p className="text-gray-400 text-[10px] leading-tight text-center">Track dabs</p>
+              <p className="text-gray-500 text-[10px] leading-tight text-center">Track dabs</p>
             </div>
           </Link>
         )}
@@ -200,7 +194,7 @@ export default function LandingScreen({ onStart }: Props) {
       >
         <span className="text-xl">👑</span>
         <span>Leaderboard</span>
-        <span className="text-gray-400 text-sm font-normal">Top Dabbers →</span>
+        <span className="text-gray-500 text-sm font-normal">Top Dabbers →</span>
       </motion.a>
 
       {/* Privacy notice */}
@@ -224,11 +218,11 @@ export default function LandingScreen({ onStart }: Props) {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.7 }}
-        className="text-xs text-gray-400 flex justify-center gap-4 pb-2"
+        className="text-xs text-gray-600 flex justify-center gap-4 pb-2"
       >
-        <Link href="/terms" className="hover:text-gray-200 transition-colors">Terms</Link>
+        <Link href="/terms" className="hover:text-gray-400 transition-colors">Terms</Link>
         <span>·</span>
-        <Link href="/privacy" className="hover:text-gray-200 transition-colors">Privacy</Link>
+        <Link href="/privacy" className="hover:text-gray-400 transition-colors">Privacy</Link>
       </motion.footer>
     </div>
   )
