@@ -212,7 +212,7 @@ export default function LandingScreen({ onStart }: Props) {
       >
         <Link
           href="/privacy"
-          className="inline-flex items-center gap-2 text-gray-500 hover:text-gray-300 text-xs transition-colors"
+          className="inline-flex items-center gap-2 text-gray-400 hover:text-gray-200 text-xs transition-colors"
         >
           <span>🔒</span>
           <span>Camera stays on your device — no video recorded or uploaded</span>
