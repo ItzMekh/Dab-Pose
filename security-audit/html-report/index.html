@@ -13,7 +13,7 @@
         <span class="brand-mark">🛡️</span>
         <div>
           <h1>Dab Pose — Security Audit</h1>
-          <p class="subtitle">2026-05-18 audit · 22 fixes deployed 2026-05-19 · <span class="domain">dabpose.fun</span></p>
+          <p class="subtitle">2026-05-18 audit · 25 fixes deployed by 2026-05-20 · <span class="domain">dabpose.fun</span> behind 🟠 Cloudflare</p>
         </div>
       </div>
       <div class="search">
@@ -47,8 +47,8 @@
         </div>
         <div class="stat medium">
           <div class="stat-label">MEDIUM</div>
-          <div class="stat-value">4 / 10</div>
-          <div class="stat-hint">เหลือ 4 (owner action)</div>
+          <div class="stat-value">2 / 10</div>
+          <div class="stat-hint">เหลือ 2 (AU-01, DP-02)</div>
         </div>
         <div class="stat low">
           <div class="stat-label">LOW</div>
@@ -71,11 +71,11 @@
           <strong>โดยรวม:</strong> ดีกว่าค่าเฉลี่ยของโปรเจกต์ขนาดนี้ — รอบล่าสุด (<code>SECURITY_FIXES.md</code>) แก้ CSRF + rate-limit + fail-closed ไปแล้ว ที่เหลือคลัสเตอร์ใน 3 จุด:
         </p>
         <ol>
-          <li><strong>Browser hardening ขาด</strong> — ไม่มี CSP, ไม่มี X-Frame-Options, ไม่มี Permissions-Policy → ถ้ามี XSS อนาคตจะไม่มี layer 2 ป้องกัน (<a href="#" data-jump="F-01">F-01</a>, <a href="#" data-jump="F-02">F-02</a>, <a href="#" data-jump="F-03">F-03</a>, <a href="#" data-jump="F-11">F-11</a>)</li>
-          <li><strong>Supply chain</strong> — MediaPipe WASM โหลดจาก CDN ไม่มี SRI → ถ้า CDN ถูก hack รัน attacker JS เข้าถึง camera + cookie ได้ (<a href="#" data-jump="C-01">C-01</a> / <a href="#" data-jump="F-04">F-04</a>)</li>
-          <li><strong>Leaderboard integrity</strong> — score endpoint รับ anonymous ไม่มี proof-of-play → POST <code>time_ms:100</code> ผ่าน ทุกคนเป็น #1 ได้ (<a href="#" data-jump="A-01">A-01</a>)</li>
+          <li><strong>Browser hardening ขาด</strong> → ✅ ปิดครบ — CSP + X-Frame-Options + HSTS + Permissions-Policy ลง <code>next.config.ts</code> (<a href="#" data-jump="F-01">F-01</a>, <a href="#" data-jump="F-02">F-02</a>, <a href="#" data-jump="F-03">F-03</a>, <a href="#" data-jump="F-11">F-11</a>)</li>
+          <li><strong>Supply chain</strong> → ✅ ปิด — MediaPipe self-hosted ใต้ <code>/public/mediapipe/&lt;version&gt;/</code> + CSP ตัด jsdelivr ออก (<a href="#" data-jump="C-01">C-01</a> / <a href="#" data-jump="F-04">F-04</a>)</li>
+          <li><strong>Leaderboard integrity</strong> → ✅ ปิด — proof-of-play token + <code>elapsed</code> integrity check (<a href="#" data-jump="A-01">A-01</a>)</li>
         </ol>
-        <p><strong>ไม่พบ vulnerability ระดับ Critical exploit ได้ทันที</strong></p>
+        <p><strong>Final state</strong>: 0 Critical · 0 High · 2 Medium (owner-action: AU-01 email verification, DP-02 Next.js 16 upgrade) · production behind 🟠 Cloudflare proxy with SSL Full strict + Bot Fight Mode + Turnstile gate.</p>
       </div>
 
       <div class="panel">

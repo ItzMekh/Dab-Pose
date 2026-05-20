@@ -45,20 +45,32 @@ Verified on production (`curl -I https://dabpose.fun/`) after deploy:
 
 Schema migration applied to Neon production: `drizzle/0001_users_deleted_at.sql`.
 
-| Severity | At audit | Today | Closed |
-|---|---|---|---|
-| Critical | 0 | 0 | — |
-| **High** | 4 | **0** ✓ | **4** |
-| **Medium** | 10 | 4 | 6 |
-| **Low** | 12 | 9 | 3 |
-| Info/Pass | 35 | 36 | 1 |
+| Severity | At audit | 2026-05-19 | 2026-05-20 | Closed |
+|---|---|---|---|---|
+| Critical | 0 | 0 | 0 | — |
+| **High** | 4 | **0** ✓ | **0** ✓ | **4** |
+| **Medium** | 10 | 4 | **2** | **8** |
+| **Low** | 12 | 9 | 8 | 4 |
+| Info/Pass | 35 | 36 | 37 | 2 |
 
-Remaining items are owner-coordinated or single-line hygiene:
-- **AU-01** Email verification — needs an email provider choice
-- **AU-02** Vercel BotID / Cloudflare Bot Fight Mode — owner toggles in the dashboard
-- **DP-02** Next.js 15 → 16 — separate PR
-- **I-06** Vercel WAF rule audit — owner runs `vercel firewall rules ls`
-- Low-severity Code items (C-02, C-05, C-06, C-07, C-09, C-12, C-14, C-16, C-17) — hygiene queue
+### 2026-05-20 — additional closures
+
+- **AU-02** Cloudflare Turnstile widget on signup + Credentials login. Owner provisioned real keys; production rejects dummy tokens.
+- **C-12** Signup INSERT 23505 race → 409 (unwraps Drizzle's `err.cause.code`).
+- **I-06** Vercel WAF audit. Disabled the duplicate rate-limit rule for `/api/score` POST after CF Bot Fight Mode + DDoS took over volumetric handling at the edge. Exploit-probe deny + signup-log kept.
+
+### Cloudflare migration complete
+
+- Zone `dabpose.fun` activated 2026-05-20 02:04 UTC.
+- SSL/TLS = Full (strict).
+- Bot Fight Mode = On (Block AI bots also enabled).
+- Cache Rules: bypass `/api/*`, `/login`, `/signup`, `/profile/*`.
+- All security headers + Turnstile widget verified live through CF anycast.
+
+Remaining items:
+- **AU-01** Email verification — needs an email provider choice (Resend / Postmark / Vercel email)
+- **DP-02** Next.js 15 → 16 — separate upgrade PR via `vercel:next-upgrade`
+- Low-severity Code items (C-02, C-05, C-06, C-07, C-09, C-14, C-16, C-17) — hygiene queue (C-12 closed 2026-05-20)
 
 ---
 
