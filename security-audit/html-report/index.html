@@ -57,8 +57,8 @@
         </div>
         <div class="stat info">
           <div class="stat-label">INFO / PASS</div>
-          <div class="stat-value">36</div>
-          <div class="stat-hint">+1 since audit</div>
+          <div class="stat-value">39</div>
+          <div class="stat-hint">+4 since audit</div>
         </div>
       </div>
 
@@ -81,17 +81,32 @@
       <div class="panel">
         <h2>Top 10 prioritized fixes</h2>
         <ol class="priority-list">
-          <li><strong>Headers</strong> — เพิ่ม CSP + X-Frame-Options + HSTS + Permissions-Policy ใน <code>next.config.ts</code> · ปิด 4 findings · ใช้เวลา ~1 ชม</li>
-          <li><strong>Self-host MediaPipe WASM</strong> — ดาวน์โหลด bundle ลง <code>public/mediapipe/</code> · ปิด supply-chain risk สูงสุด · ~2 ชม</li>
-          <li><strong>Proof-of-play token</strong> — ใหม่ <code>/api/play/start</code> + ผูกกับ <code>/api/score</code> · ปิด leaderboard forgery · ~3 ชม</li>
-          <li><strong>CSRF บน signup</strong> — เพิ่ม <code>isSameOrigin()</code> ที่ <code>/api/auth/signup</code> · 5 นาที</li>
-          <li><strong>Avatar referrerPolicy</strong> — เพิ่ม <code>referrerPolicy=&quot;no-referrer&quot;</code> 3 จุด · 15 นาที</li>
-          <li><strong>DELETE account invalidation</strong> — ลบ cookie + soft-delete + reserve username · 1 ชม + migration</li>
-          <li><strong>Pin next-auth exact</strong> — ตัด <code>^</code> ใน <code>package.json</code> · 1 นาที</li>
-          <li><strong>CSPRNG username</strong> — <code>crypto.randomUUID()</code> แทน <code>Math.random()</code> · 10 นาที</li>
-          <li><strong>Vercel BotID</strong> — บน signup + login · 1 ชม</li>
-          <li><strong>Next.js 15 → 16 plan</strong> — separate PR · ครึ่งวัน</li>
+          <li>✅ <strong>Headers</strong> — CSP + X-Frame-Options + HSTS + Permissions-Policy <span style="color:#22c55e">(deployed)</span></li>
+          <li>✅ <strong>Self-host MediaPipe WASM</strong> — <code>/public/mediapipe/0.5.1675471629/</code> <span style="color:#22c55e">(deployed)</span></li>
+          <li>✅ <strong>Proof-of-play token</strong> — <code>/api/play/start</code> + verify บน <code>/api/score</code> <span style="color:#22c55e">(deployed)</span></li>
+          <li>✅ <strong>CSRF บน signup</strong> — <code>isSameOrigin()</code> <span style="color:#22c55e">(deployed)</span></li>
+          <li>✅ <strong>Avatar referrerPolicy</strong> — 3 callsites <span style="color:#22c55e">(deployed)</span></li>
+          <li>✅ <strong>DELETE account</strong> — soft-delete + clear cookie + reserve username <span style="color:#22c55e">(deployed)</span></li>
+          <li>✅ <strong>Pin next-auth exact</strong> <span style="color:#22c55e">(deployed)</span></li>
+          <li>✅ <strong>CSPRNG username</strong> — <code>crypto.randomUUID()</code> <span style="color:#22c55e">(deployed)</span></li>
+          <li>✅ <strong>Cloudflare Turnstile</strong> — signup + Credentials login + real keys <span style="color:#22c55e">(deployed)</span></li>
+          <li>✅ <strong>Next.js 16 upgrade</strong> — PR #4 squash-merged <span style="color:#22c55e">(deployed)</span></li>
         </ol>
+      </div>
+
+      <div class="panel">
+        <h2>Bonus — ปิดเพิ่ม 2026-05-20</h2>
+        <ul>
+          <li>✅ <strong>HIBP password breach check</strong> — k-anonymity API, min length 10 chars (C-17)</li>
+          <li>✅ <strong>Zod validation</strong> on Redis members in leaderboard + rename (C-03)</li>
+          <li>✅ <strong>Auth.js custom error page</strong> — <code>pages.error = '/login'</code> (AU-08)</li>
+          <li>✅ <strong>logError helper</strong> with PII redaction across 7 callsites (C-16)</li>
+          <li>✅ <strong>gitleaks pre-commit hook</strong> — fail-soft (I-07)</li>
+          <li>✅ <strong>JWT renametag sync</strong> — Redis-backed, replaces 5s DB polling (C-04)</li>
+          <li>✅ <strong>CF-Connecting-IP / CF-IPCountry</strong> wiring + tightening (C-08, A-05)</li>
+          <li>✅ <strong>Vercel WAF dedup</strong> — disabled duplicate /api/score rate-limit (I-06)</li>
+          <li>✅ <strong>Cloudflare proxy live</strong> — SSL Full strict + Bot Fight Mode + Cache Rules</li>
+        </ul>
       </div>
 
       <div class="panel">
@@ -131,7 +146,7 @@
     <!-- ROADMAP -->
     <section id="roadmap" class="tab">
       <div class="panel">
-        <h2>Sprint 1 — สัปดาห์นี้ (headers + supply chain)</h2>
+        <h2>✅ Sprint 1 — DONE (headers + supply chain)</h2>
         <ul class="sprint">
           <li>Apply <code>next.config.ts</code> headers (CSP, X-Frame-Options, HSTS, Permissions-Policy)</li>
           <li>Self-host MediaPipe WASM</li>
@@ -144,7 +159,7 @@
         <p class="hint">หลัง Sprint 1: <code>curl -I https://dabpose.fun/</code> ต้องเห็น CSP + X-Frame-Options + HSTS + Permissions-Policy + Referrer-Policy + X-Content-Type-Options. Console clean</p>
       </div>
       <div class="panel">
-        <h2>Sprint 2 — สัปดาห์ถัดไป (auth integrity)</h2>
+        <h2>✅ Sprint 2 — DONE (auth integrity)</h2>
         <ul class="sprint">
           <li>DELETE account: invalidate JWT + soft-delete (migration ใหม่ <code>deleted_at</code>)</li>
           <li>JWT tag-based sync</li>
@@ -157,7 +172,7 @@
         </ul>
       </div>
       <div class="panel">
-        <h2>Sprint 3 — สองสัปดาห์ (leaderboard integrity)</h2>
+        <h2>✅ Sprint 3 — DONE (leaderboard integrity)</h2>
         <ul class="sprint">
           <li>Proof-of-play token (<code>/api/play/start</code> + client + server)</li>
           <li>Light limiter บน public reads</li>
@@ -166,7 +181,7 @@
         </ul>
       </div>
       <div class="panel">
-        <h2>Sprint 4+ — เลื่อนได้</h2>
+        <h2>✅ Sprint 4 — DONE (Next.js 16 + vercel.ts deferred)</h2>
         <ul class="sprint">
           <li>Next.js 15 → 16</li>
           <li>Migrate to <code>vercel.ts</code></li>
@@ -215,9 +230,11 @@
       </div>
 
       <div class="panel">
-        <h2>Trust boundaries</h2>
+        <h2>Trust boundaries (post-2026-05-20)</h2>
         <ul>
-          <li><strong>Browser ↔ Vercel edge</strong> — WAF + rate-limit · bypass: IP rotation</li>
+          <li><strong>Browser ↔ Cloudflare</strong> — SSL Full strict · DDoS auto · Bot Fight Mode · Cache Rules (bypass /api/*, /login, /signup, /profile/*)</li>
+          <li><strong>Cloudflare ↔ Vercel</strong> — SSL Full strict · CF strips inbound CF-* headers (anti-spoof) · CF-Connecting-IP + CF-IPCountry authoritative</li>
+          <li><strong>Vercel edge ↔ Function</strong> — WAF (exploit-probe deny + signup log; rate-limit deduped with CF) · bypass: IP rotation</li>
           <li><strong>Vercel edge ↔ Function</strong> — auth + Origin + regex · ok</li>
           <li><strong>Function ↔ Postgres</strong> — Drizzle parameterized · SQLi ไม่ feasible</li>
           <li><strong>Function ↔ Redis</strong> — JSON.stringify on write · safe as long as server controls input</li>
@@ -245,7 +262,7 @@
         <h2>Outdated direct dependencies</h2>
         <table class="tbl">
           <tr><th>Package</th><th>Installed</th><th>Latest</th><th>Risk</th></tr>
-          <tr><td>next</td><td>15.5.18</td><td>16.2.6</td><td class="med">Medium — backport lag</td></tr>
+          <tr><td>next</td><td><strong>16.2.6</strong></td><td>16.2.6</td><td style="color:#22c55e">✓ current</td></tr>
           <tr><td>next-auth</td><td>5.0.0-beta.31</td><td>(beta line)</td><td class="med">Medium — beta + caret</td></tr>
           <tr><td>framer-motion</td><td>11.18.2</td><td>12.38.0</td><td class="lo">Low — no known CVE</td></tr>
           <tr><td>lucide-react</td><td>0.511.0</td><td>1.16.0</td><td class="lo">Low</td></tr>
