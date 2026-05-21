@@ -8,7 +8,15 @@
     "start": "next start",
     "lint": "next lint",
     "test": "playwright test",
-    "prepare": "husky 2>/dev/null || true"
+    "prepare": "husky 2>/dev/null || true",
+    "perf:smoke": "k6 run --out json=perf/runs/round-0/k6-smoke.json perf/k6/smoke.js",
+    "perf:moderate": "k6 run --out json=perf/runs/round-0/k6-moderate.json perf/k6/moderate.js",
+    "perf:stress": "k6 run --out json=perf/runs/round-0/k6-stress.json perf/k6/stress.js",
+    "perf:lhci": "lhci collect --config=perf/lhci/lhci.config.js",
+    "perf:e2e": "playwright test perf/playwright/realistic.spec.ts --reporter=json",
+    "perf:clinic": "bash perf/clinic/run.sh",
+    "perf:report": "tsx perf/report_gen.ts",
+    "perf:all": "bash perf/run_all.sh"
   },
   "dependencies": {
     "@mediapipe/holistic": "^0.5.1675471629",
@@ -32,19 +40,23 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.5",
+    "@lhci/cli": "^0.14.0",
     "@playwright/test": "^1.52.0",
     "@tailwindcss/postcss": "^4",
     "@types/bcryptjs": "^2.4.6",
     "@types/node": "^20",
     "@types/react": "19.2.15",
     "@types/react-dom": "19.2.3",
+    "autocannon": "^7.15.0",
+    "clinic": "^13.0.0",
     "dotenv": "^17.4.2",
     "drizzle-kit": "^0.31.10",
     "eslint": "^9",
     "eslint-config-next": "16.2.6",
+    "husky": "^9.1.7",
     "tailwindcss": "^4",
-    "typescript": "^5",
-    "husky": "^9.1.7"
+    "tsx": "^4.22.3",
+    "typescript": "^5"
   },
   "overrides": {
     "postcss": ">=8.5.10",
