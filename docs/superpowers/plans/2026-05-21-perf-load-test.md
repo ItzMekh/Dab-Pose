@@ -791,21 +791,32 @@ async function main() {
   ] as const
 
   const totals: Record<string, number> = {}
-  const totalCountry: Record<string, number> = {}
+  // Country deltas tracked per scope — mirrors the insert path which
+  // ZINCRBYs each of country:{all,week,today} exactly once per play.
+  // Aggregating across all 6 lb keys would 3x over-decrement.
+  const countryByScope: { all: Record<string, number>; week: Record<string, number>; today: Record<string, number> } = {
+    all: {}, week: {}, today: {},
+  }
 
   for (const [k, isStreak] of keys) {
     const { removed, countryDelta } = await purgeKey(k, isStreak)
     totals[k] = removed
+    const scope: 'all' | 'week' | 'today' =
+      k.endsWith(':all') ? 'all' : k.includes(':week:') ? 'week' : 'today'
     for (const [c, n] of Object.entries(countryDelta)) {
-      totalCountry[c] = (totalCountry[c] ?? 0) + n
+      countryByScope[scope][c] = (countryByScope[scope][c] ?? 0) + n
     }
     console.log(`[redis] ${k} → removed ${removed}`)
   }
 
   if (!DRY) {
-    for (const [c, n] of Object.entries(totalCountry)) {
+    for (const [c, n] of Object.entries(countryByScope.all)) {
       await redis.zincrby(countryAllKey(), -n, c)
+    }
+    for (const [c, n] of Object.entries(countryByScope.week)) {
       await redis.zincrby(countryWeekKey(), -n, c)
+    }
+    for (const [c, n] of Object.entries(countryByScope.today)) {
       await redis.zincrby(countryTodayKey(), -n, c)
     }
     const removedFromAll = totals['lb:single:all'] + totals['lb:streak:all']
