@@ -1,3 +1,8 @@
+// Mobile preset (lhci calls this `perf`, which simulates mobile 4G).
+// Mirrors lhci.config.js but with mobile emulation and a separate outputDir
+// so the desktop and mobile artifacts don't overwrite each other.
+const DEFAULT_OUT = './perf/runs/round-0/lhci-mobile'
+
 module.exports = {
   ci: {
     collect: {
@@ -8,7 +13,7 @@ module.exports = {
       ],
       numberOfRuns: 3,
       settings: {
-        preset: 'desktop',
+        preset: 'perf',
         extraHeaders: process.env.PERF_BYPASS_TOKEN
           ? { 'x-perf-test': process.env.PERF_BYPASS_TOKEN }
           : {},
@@ -28,7 +33,7 @@ module.exports = {
     },
     upload: {
       target: 'filesystem',
-      outputDir: process.env.LHCI_OUTPUT_DIR || './perf/runs/round-0/lhci',
+      outputDir: process.env.LHCI_OUTPUT_DIR || DEFAULT_OUT,
     },
   },
 }

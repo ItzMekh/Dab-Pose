@@ -86,12 +86,16 @@ fi
 if [ "${SKIP_LHCI:-0}" != "1" ]; then
   echo "[orch] Layer 4: Lighthouse desktop"
   mkdir -p "$RUN_DIR/lhci"
-  npx lhci collect --config=perf/lhci/lhci.config.js \
+  # autorun = collect + assert + upload (filesystem target from config)
+  LHCI_OUTPUT_DIR="$RUN_DIR/lhci" \
+    npx lhci autorun --config=perf/lhci/lhci.config.js \
     || echo "[orch] LHCI desktop failed — continuing"
 
-  echo "[orch] Layer 4: Lighthouse mobile (extra preset)"
+  echo "[orch] Layer 4: Lighthouse mobile (preset=perf)"
   mkdir -p "$RUN_DIR/lhci-mobile"
-  npx lhci collect --config=perf/lhci/lhci.config.js --settings.preset=mobile \
+  # `perf` is the mobile preset name in lhci; valid choices are perf | experimental | desktop
+  LHCI_OUTPUT_DIR="$RUN_DIR/lhci-mobile" \
+    npx lhci autorun --config=perf/lhci/lhci.mobile.config.js \
     || echo "[orch] LHCI mobile failed — continuing"
 else
   echo "[orch] Layer 4: SKIPPED (SKIP_LHCI=1)"
