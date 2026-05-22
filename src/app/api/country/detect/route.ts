@@ -9,7 +9,10 @@ export async function GET(req: NextRequest) {
     { country },
     {
       headers: {
-        'Cache-Control': 'no-store',
+        // Browser-cached for an hour: country detection is per-IP and stable
+        // within a session. Reduces ~360ms cold-start hits on repeat visits.
+        // `private` so CDN/Vercel won't cache (country varies per IP).
+        'Cache-Control': 'private, max-age=3600',
         'X-Content-Type-Options': 'nosniff',
       },
     }

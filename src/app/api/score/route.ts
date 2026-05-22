@@ -141,13 +141,14 @@ export async function POST(req: NextRequest) {
     p.expire(cTKey, TODAY_TTL)
     await p.exec()
 
-    const [betterCount, totalCount, rank, weekRank, todayRank] = await Promise.all([
-      redis.zcount(allKey, count + 1, '+inf'),
-      redis.zcard(allKey),
-      redis.zrevrank(allKey, member),
-      redis.zrevrank(wKey, member),
-      redis.zrevrank(tKey, member),
-    ])
+    const readPipe = redis.pipeline()
+    readPipe.zcount(allKey, count + 1, '+inf')
+    readPipe.zcard(allKey)
+    readPipe.zrevrank(allKey, member)
+    readPipe.zrevrank(wKey, member)
+    readPipe.zrevrank(tKey, member)
+    const [betterCount, totalCount, rank, weekRank, todayRank] =
+      (await readPipe.exec()) as [number, number, number | null, number | null, number | null]
 
     const total = (totalCount as number) ?? 1
     const better = (betterCount as number) ?? 0
@@ -213,13 +214,14 @@ export async function POST(req: NextRequest) {
   p.expire(cTKey, TODAY_TTL)
   await p.exec()
 
-  const [betterCount, totalCount, rank, weekRank, todayRank] = await Promise.all([
-    redis.zcount(allKey, '-inf', time_ms - 1),
-    redis.zcard(allKey),
-    redis.zrank(allKey, member),
-    redis.zrank(wKey, member),
-    redis.zrank(tKey, member),
-  ])
+  const readPipe = redis.pipeline()
+  readPipe.zcount(allKey, '-inf', time_ms - 1)
+  readPipe.zcard(allKey)
+  readPipe.zrank(allKey, member)
+  readPipe.zrank(wKey, member)
+  readPipe.zrank(tKey, member)
+  const [betterCount, totalCount, rank, weekRank, todayRank] =
+    (await readPipe.exec()) as [number, number, number | null, number | null, number | null]
 
   const total = (totalCount as number) ?? 1
   const better = (betterCount as number) ?? 0
