@@ -113,8 +113,6 @@ IDLE → COUNTDOWN → WAITING → SIGNAL → DETECTED → RESULT → IDLE
 
 **Leaderboard** — Redis sorted sets, 1 `ZRANGE` per request, `s-maxage=30` cache. Score writes pipeline 3× `ZADD` + 2× `EXPIRE` + `INCR` in one round trip.
 
-Full schema, thresholds, and design decisions live in **[SKILL.md](SKILL.md)** (Karpathy-style llm-wiki).
-
 ---
 
 ## Project structure
@@ -144,8 +142,6 @@ src/
 ## Contributing
 
 Issues and PRs welcome → [github.com/ItzMekh/dab-pose/issues](https://github.com/ItzMekh/dab-pose/issues)
-
-Before changing game logic or UI patterns, read **[SKILL.md](SKILL.md)** and append to the wiki log when you add new ones.
 
 ---
 

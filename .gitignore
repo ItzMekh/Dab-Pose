@@ -73,3 +73,10 @@ IDEA_BACKLOG.md
 /scripts/
 /docs/
 /agent/
+qa_test_reports/
+.browserslistrc
+security-audit/
+perf/
+drizzle/
+docs/superpowers/
+.husky/
