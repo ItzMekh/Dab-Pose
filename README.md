@@ -32,7 +32,7 @@ Built on MediaPipe Holistic — 33 pose landmarks tracked at ~30 FPS, fully clie
 
 ## Features
 
-- **Real-time pose detection** — MediaPipe Holistic WASM, lazy-loaded from CDN
+- **Real-time pose detection** — MediaPipe Holistic WASM, self-hosted
 - **Frame-perfect timing** — `performance.now()` for sub-ms reaction measurement
 - **Anti-cheat** — 3-frame confirmation + arm-raised early-start detection
 - **Global leaderboards** — all-time / week / today windows, separate per mode
@@ -50,7 +50,8 @@ Built on MediaPipe Holistic — 33 pose landmarks tracked at ~30 FPS, fully clie
 **Pose** MediaPipe Holistic (WASM, `0.5.1675471629` pinned)
 **Backend** Next.js Route Handlers · Upstash Redis (sorted sets) · Neon Postgres (Drizzle ORM)
 **Auth** Auth.js v5 (NextAuth) — Google OAuth
-**Infra** Vercel · Upstash Ratelimit · Vercel WAF (custom rules)
+**Security** Cloudflare (proxy, Bot Fight Mode) · Turnstile (CAPTCHA) · Vercel WAF (custom rules)
+**Infra** Vercel · Upstash Ratelimit
 **Tests** Playwright (smoke + e2e)
 
 ---
@@ -70,14 +71,15 @@ npm run dev                  # → http://localhost:3000
 ```env
 UPSTASH_REDIS_REST_URL=
 UPSTASH_REDIS_REST_TOKEN=
-DATABASE_URL=                  # Neon Postgres
-AUTH_SECRET=                   # openssl rand -base64 32
+DATABASE_URL=                           # Neon Postgres
+AUTH_SECRET=                            # openssl rand -base64 32
 AUTH_GOOGLE_ID=
 AUTH_GOOGLE_SECRET=
-NEXTAUTH_URL=http://localhost:3000
+NEXT_PUBLIC_TURNSTILE_SITE_KEY=         # Cloudflare Turnstile
+TURNSTILE_SECRET_KEY=
 ```
 
-> Server-side only — **no** `NEXT_PUBLIC_` prefix on Redis/DB keys.
+> Server-side only — **no** `NEXT_PUBLIC_` prefix on Redis/DB/Auth keys.
 
 ### Scripts
 
@@ -112,30 +114,6 @@ IDLE → COUNTDOWN → WAITING → SIGNAL → DETECTED → RESULT → IDLE
 **Detection** — `DabDetector` needs 3 consecutive confirmed frames. Uses elbow angles + wrist-to-nose distance. A single negative frame resets the counter.
 
 **Leaderboard** — Redis sorted sets, 1 `ZRANGE` per request, `s-maxage=30` cache. Score writes pipeline 3× `ZADD` + 2× `EXPIRE` + `INCR` in one round trip.
-
----
-
-## Project structure
-
-```
-src/
-├── app/
-│   ├── api/              # score, leaderboard, stats, auth, profile
-│   ├── leaderboard/      # public rankings
-│   ├── profile/[name]/   # user pages
-│   └── page.tsx          # landing + game entry
-├── components/
-│   ├── GameScreen.tsx    # main game container
-│   ├── CameraFeed.tsx    # MediaPipe loop
-│   ├── GameTimer.tsx     # countdown + signal
-│   └── ResultScreen.tsx  # post-play submit
-├── hooks/                # useBrowserCompat, useUsername, useCountry, ...
-└── lib/
-    ├── dab-detector.ts   # pose → dab decision
-    ├── game-state.ts     # state machine
-    ├── redis.ts          # Upstash client
-    └── api.ts            # client → /api/score
-```
 
 ---
 
