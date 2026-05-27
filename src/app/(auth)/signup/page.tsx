@@ -5,6 +5,7 @@ import { signIn } from 'next-auth/react'
 import Link from 'next/link'
 import AuthBrandPanel from '@/components/auth/AuthBrandPanel'
 import TurnstileWidget from '@/components/auth/TurnstileWidget'
+import LegalModal from '@/components/legal/LegalModal'
 import { useCountry } from '@/hooks/useCountry'
 
 function GoogleIcon() {
@@ -28,6 +29,7 @@ export default function SignupPage() {
   const [loading, setLoading] = useState(false)
   const [country] = useCountry()
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null)
+  const [legalModal, setLegalModal] = useState<'terms' | 'privacy' | null>(null)
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -151,10 +153,12 @@ export default function SignupPage() {
 
           <p className="text-center text-gray-600 text-xs">
             By signing up, you agree to our{' '}
-            <Link href="/terms" className="text-gray-500 hover:text-gray-400 transition-colors underline">Terms</Link>
+            <button type="button" onClick={() => setLegalModal('terms')} className="text-gray-500 hover:text-gray-400 transition-colors underline">Terms</button>
             {' '}and{' '}
-            <Link href="/privacy" className="text-gray-500 hover:text-gray-400 transition-colors underline">Privacy</Link>
+            <button type="button" onClick={() => setLegalModal('privacy')} className="text-gray-500 hover:text-gray-400 transition-colors underline">Privacy</button>
           </p>
+
+          {legalModal && <LegalModal type={legalModal} onClose={() => setLegalModal(null)} onSwitchTo={setLegalModal} />}
         </div>
       </div>
     </div>

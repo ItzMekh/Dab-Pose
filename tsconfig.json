@@ -37,6 +37,9 @@
   ],
   "exclude": [
     "node_modules",
-    "agent"
+    "agent",
+    "perf",
+    "security-audit",
+    "scripts"
   ]
 }
