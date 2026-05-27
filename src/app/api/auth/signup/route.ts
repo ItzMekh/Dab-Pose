@@ -8,6 +8,7 @@ import { signupLimiter, clientIpOrFail, clientIp } from '@/lib/ratelimit'
 import { isSameOrigin } from '@/lib/csrf'
 import { verifyTurnstile } from '@/lib/turnstile'
 import { checkPassword } from '@/lib/password'
+import { auth } from '@/auth'
 
 const USERNAME_RE = /^[a-zA-Z0-9_]{3,20}$/
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -28,6 +29,11 @@ function suggestUsernames(base: string, country: string): string[] {
 }
 
 export async function POST(req: NextRequest) {
+  const session = await auth()
+  if (session?.user) {
+    return NextResponse.json({ error: 'Already authenticated' }, { status: 403 })
+  }
+
   if (!isSameOrigin(req)) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
