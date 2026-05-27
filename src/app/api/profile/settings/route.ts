@@ -143,7 +143,17 @@ export async function PATCH(req: NextRequest) {
     if (typeof value !== 'string' || !COUNTRY_RE.test(value)) {
       return NextResponse.json({ error: 'Invalid country code' }, { status: 400 })
     }
+    const cdKey = `u:country-cd:${session.user.id}`
+    const existing = await redis.get(cdKey)
+    if (existing) {
+      const ttl = await redis.ttl(cdKey)
+      return NextResponse.json(
+        { error: 'You can change country once per hour' },
+        { status: 429, headers: { 'Retry-After': String(Math.max(1, ttl)) } }
+      )
+    }
     await db.update(users).set({ country: value }).where(eq(users.id, session.user.id))
+    await redis.set(cdKey, '1', { ex: 3600 })
     return NextResponse.json({ ok: true })
   }
 
