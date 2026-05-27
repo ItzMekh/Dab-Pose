@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation'
 import { eq, and, isNull } from 'drizzle-orm'
-import { auth } from '@/auth'
+import { auth, signOut } from '@/auth'
 import { db } from '@/lib/db'
 import { users } from '@/lib/schema'
 
@@ -15,6 +15,7 @@ export default async function ProfileMePage() {
     .where(and(eq(users.id, session.user.id), isNull(users.deletedAt)))
     .limit(1)
   if (!user) {
+    await signOut({ redirect: false })
     redirect('/login')
   }
   redirect(`/profile/${user.username}`)
