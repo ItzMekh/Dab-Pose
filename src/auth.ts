@@ -118,14 +118,18 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       if (token.id && !user && !account && !profile && trigger !== 'update') {
         try {
           const tag = (await redis.get(`u:renametag:${token.id}`)) as string | null
-          if (tag && tag !== token.renameTag) {
+          const needsRenameSync = tag && tag !== token.renameTag
+          const staleCheck = !token.dbCheckedAt || Date.now() - (token.dbCheckedAt as number) > 300_000
+          if (needsRenameSync || staleCheck) {
             const [dbUser] = await db
               .select({ username: users.username })
               .from(users)
               .where(and(eq(users.id, token.id as string), isNull(users.deletedAt)))
               .limit(1)
-            if (dbUser) token.username = dbUser.username
-            token.renameTag = tag
+            if (!dbUser) return {} as typeof token
+            token.username = dbUser.username
+            token.dbCheckedAt = Date.now()
+            if (needsRenameSync) token.renameTag = tag
           }
         } catch (err) {
           logError('auth', err, { context: 'tagged sync error' })
