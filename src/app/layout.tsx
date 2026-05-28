@@ -3,6 +3,7 @@ import { Geist } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import { SpeedInsights } from '@vercel/speed-insights/next'
 import { Providers } from '@/components/Providers'
+import { PageviewTracker } from '@/components/PageviewTracker'
 import './globals.css'
 
 const geist = Geist({ subsets: ['latin'] })
@@ -47,6 +48,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en" className="dark">
       <body className={geist.className}>
         <Providers>{children}</Providers>
+        <PageviewTracker />
         <Analytics />
         <SpeedInsights />
       </body>
