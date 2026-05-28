@@ -2,7 +2,7 @@ import NextAuth from 'next-auth'
 import Credentials from 'next-auth/providers/credentials'
 import Google from 'next-auth/providers/google'
 import { compare } from 'bcryptjs'
-import { headers } from 'next/headers'
+import { headers, cookies } from 'next/headers'
 import { db } from '@/lib/db'
 import { logError } from '@/lib/log'
 import { users } from '@/lib/schema'
@@ -11,12 +11,23 @@ import { clientCountryFromHeaders } from '@/lib/client-meta'
 import { verifyTurnstile } from '@/lib/turnstile'
 import { redis } from '@/lib/redis'
 
+const COUNTRY_RE = /^[A-Z]{2}$/
+
 async function detectCountry(): Promise<string> {
   try {
     const h = await headers()
-    return clientCountryFromHeaders(h)
+    const fromMiddleware = h.get('x-dab-country')?.toUpperCase() ?? ''
+    if (COUNTRY_RE.test(fromMiddleware) && fromMiddleware !== 'XX') return fromMiddleware
+    const fromHeaders = clientCountryFromHeaders(h)
+    if (fromHeaders !== 'XX') return fromHeaders
   } catch {
-    // headers() may not be available in some auth contexts — fall through.
+    // headers() unavailable in this auth context — try cookie below.
+  }
+  try {
+    const c = (await cookies()).get('__dab_country')?.value?.toUpperCase() ?? ''
+    if (COUNTRY_RE.test(c)) return c
+  } catch {
+    // cookies() also unavailable — last resort fallthrough.
   }
   return 'XX'
 }
