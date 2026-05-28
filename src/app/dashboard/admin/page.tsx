@@ -27,7 +27,6 @@ export default function AdminPage() {
   const [to, setTo] = useState(todayStr)
 
   const [traffic, setTraffic] = useState<Record<string, unknown> | null>(null)
-  const [trafficUnavailable, setTrafficUnavailable] = useState(false)
   const [queryData, setQueryData] = useState<Record<string, unknown> | null>(null)
   const [pages, setPages] = useState<Array<{ label: string; value: number }>>([])
   const [referrers, setReferrers] = useState<Array<{ label: string; value: number }>>([])
@@ -38,11 +37,8 @@ export default function AdminPage() {
   const fetchTraffic = useCallback(async () => {
     try {
       const res = await fetch(`/api/dashboard/traffic?from=${from}&to=${to}`)
-      const json = await res.json()
-      if (json.unavailable) { setTrafficUnavailable(true); return }
-      setTraffic(json)
-      setTrafficUnavailable(false)
-    } catch { setTrafficUnavailable(true) }
+      if (res.ok) setTraffic(await res.json())
+    } catch { /* analytics best-effort */ }
   }, [from, to])
 
   const fetchQuery = useCallback(async () => {
@@ -64,10 +60,13 @@ export default function AdminPage() {
       setReferrers((results[1].value.referrers ?? []).map((r: { key: string; total: number }) => ({ label: r.key, value: r.total })))
     }
     if (results[2].status === 'fulfilled') {
-      const devRaw = results[2].value.devices ?? []
-      setDevices(devRaw.map((d: { key: string; total: number }, i: number) => ({
-        name: d.key, icon: i === 0 ? '📱' : i === 1 ? '💻' : '📋',
-        share: d.total, color: ['#4ade80', '#818cf8', '#fbbf24'][i] ?? '#94a3b8',
+      const devRaw = (results[2].value.devices ?? []) as Array<{ key: string; total: number }>
+      const sum = devRaw.reduce((acc, d) => acc + d.total, 0) || 1
+      setDevices(devRaw.map((d, i) => ({
+        name: d.key,
+        icon: d.key === 'mobile' ? '📱' : d.key === 'desktop' ? '💻' : d.key === 'tablet' ? '📋' : '❓',
+        share: Math.round((d.total / sum) * 100),
+        color: ['#4ade80', '#818cf8', '#fbbf24', '#94a3b8'][i] ?? '#94a3b8',
       })))
       setBrowsers((results[2].value.browsers ?? []).map((b: { key: string; total: number }) => ({ name: b.key, share: b.total })))
     }
@@ -108,17 +107,11 @@ export default function AdminPage() {
         {tab === 'Overview' && (
           <>
             <div className="mb-5 grid grid-cols-2 gap-3 md:grid-cols-4">
-              <StatCard label="Pageviews" value={trafficUnavailable ? '—' : String(traffic?.pageviews ?? '...')} color="#38bdf8" />
-              <StatCard label="Visitors" value={trafficUnavailable ? '—' : String(traffic?.visitors ?? '...')} color="#38bdf8" />
+              <StatCard label="Pageviews" value={String(traffic?.pageviews ?? '...')} color="#38bdf8" />
+              <StatCard label="Pageviews Today" value={String(traffic?.pageviewsToday ?? '...')} color="#38bdf8" />
               <StatCard label="Total Plays" value={String(q?.totalPlays ?? '...')} color="#818cf8" />
               <StatCard label="New Signups" value={String(q?.newUsers ?? '...')} color="#e879f9" />
             </div>
-            {trafficUnavailable && (
-              <div className="mb-4 rounded-lg border border-amber-500/20 bg-amber-500/5 px-4 py-2 text-xs text-amber-300">
-                Traffic data unavailable — configure VERCEL_ACCESS_TOKEN or view in{' '}
-                <a href="https://vercel.com" className="underline" target="_blank" rel="noreferrer">Vercel Dashboard</a>
-              </div>
-            )}
             <CountryTable data={countries} />
             <div className="mt-5 grid gap-3 md:grid-cols-2">
               <BarTrend title="Plays per Day" data={q?.playsPerDay ?? []} color="#818cf8" />
