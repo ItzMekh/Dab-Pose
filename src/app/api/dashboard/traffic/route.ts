@@ -1,76 +1,75 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { isAdmin } from '@/lib/admin-auth'
+import { redis, todayKey, weekKey, countryAllKey } from '@/lib/redis'
 
-const VERCEL_API = 'https://vercel.com/api/web/insights'
-const SECURITY_HEADERS = { 'X-Content-Type-Options': 'nosniff' } as const
+const HEADERS = {
+  'Cache-Control': 'private, max-age=10',
+  'X-Content-Type-Options': 'nosniff',
+} as const
+
+function parseZrangeWithScores(raw: Array<string | number>): Array<{ key: string; total: number }> {
+  const out: Array<{ key: string; total: number }> = []
+  for (let i = 0; i < raw.length; i += 2) {
+    out.push({ key: String(raw[i]), total: Math.round(Number(raw[i + 1])) })
+  }
+  return out
+}
+
+async function topN(key: string, n: number) {
+  const raw = (await redis.zrange(key, 0, n - 1, { rev: true, withScores: true })) as Array<string | number>
+  return parseZrangeWithScores(raw)
+}
 
 export async function GET(req: NextRequest) {
   const { admin } = await isAdmin()
   if (!admin) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401, headers: SECURITY_HEADERS })
-  }
-
-  const token = process.env.VERCEL_ACCESS_TOKEN
-  const projectId = process.env.VERCEL_PROJECT_ID
-  const teamId = process.env.VERCEL_TEAM_ID
-
-  if (!token || !projectId) {
-    return NextResponse.json({
-      unavailable: true,
-      message: 'VERCEL_ACCESS_TOKEN or VERCEL_PROJECT_ID not configured',
-    }, { headers: SECURITY_HEADERS })
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401, headers: HEADERS })
   }
 
   const section = req.nextUrl.searchParams.get('section')
-  const from = req.nextUrl.searchParams.get('from')
-  const to = req.nextUrl.searchParams.get('to')
 
-  try {
-    const params = new URLSearchParams({ projectId })
-    if (teamId) params.set('teamId', teamId)
-    if (from) params.set('from', from)
-    if (to) params.set('to', to)
-
-    const headers = { Authorization: `Bearer ${token}` }
-
-    if (section === 'pages') {
-      const res = await fetch(`${VERCEL_API}/stats/path?${params}`, { headers })
-      const json = await res.json()
-      return NextResponse.json({ topPages: json.data ?? [] }, { headers: SECURITY_HEADERS })
-    }
-
-    if (section === 'referrers') {
-      const res = await fetch(`${VERCEL_API}/stats/referrer?${params}`, { headers })
-      const json = await res.json()
-      return NextResponse.json({ referrers: json.data ?? [] }, { headers: SECURITY_HEADERS })
-    }
-
-    if (section === 'devices') {
-      const [devRes, brRes] = await Promise.all([
-        fetch(`${VERCEL_API}/stats/device?${params}`, { headers }),
-        fetch(`${VERCEL_API}/stats/browser?${params}`, { headers }),
-      ])
-      const [devJson, brJson] = await Promise.all([devRes.json(), brRes.json()])
-      return NextResponse.json({
-        devices: devJson.data ?? [],
-        browsers: brJson.data ?? [],
-      }, { headers: SECURITY_HEADERS })
-    }
-
-    if (section === 'countries') {
-      const res = await fetch(`${VERCEL_API}/stats/country?${params}`, { headers })
-      const json = await res.json()
-      return NextResponse.json({ byCountry: json.data ?? [] }, { headers: SECURITY_HEADERS })
-    }
-
-    // Default: overview stats
-    const res = await fetch(`${VERCEL_API}/stats?${params}`, { headers })
-    const json = await res.json()
-    return NextResponse.json(json, { headers: SECURITY_HEADERS })
-  } catch {
-    return NextResponse.json(
-      { unavailable: true, message: 'Vercel Analytics API error' },
-      { status: 502, headers: SECURITY_HEADERS },
-    )
+  if (section === 'pages') {
+    const topPages = await topN('lb:pv:path', 10)
+    return NextResponse.json({ topPages }, { headers: HEADERS })
   }
+
+  if (section === 'referrers') {
+    const referrers = await topN('lb:pv:ref', 10)
+    return NextResponse.json({ referrers }, { headers: HEADERS })
+  }
+
+  if (section === 'devices') {
+    const devices = await topN('lb:pv:dev', 10)
+    return NextResponse.json({ devices, browsers: [] }, { headers: HEADERS })
+  }
+
+  if (section === 'countries') {
+    const [pvCountries, playCountries] = await Promise.all([
+      topN('lb:pv:country', 20),
+      topN(countryAllKey(), 20),
+    ])
+    const playMap = new Map(playCountries.map(c => [c.key, c.total]))
+    const byCountry = pvCountries.map(c => ({
+      key: c.key,
+      visitors: c.total,
+      pageviews: c.total,
+      plays: playMap.get(c.key) ?? 0,
+    }))
+    return NextResponse.json({ byCountry }, { headers: HEADERS })
+  }
+
+  const today = todayKey()
+  const week = weekKey()
+  const [rawTotal, rawToday, rawWeek] = (await redis.mget(
+    'lb:pv:total',
+    `lb:pv:today:${today}`,
+    `lb:pv:week:${week}`,
+  )) as Array<string | number | null>
+
+  return NextResponse.json({
+    pageviews: rawTotal ? Number(rawTotal) : 0,
+    pageviewsToday: rawToday ? Number(rawToday) : 0,
+    pageviewsWeek: rawWeek ? Number(rawWeek) : 0,
+    unavailable: false,
+  }, { headers: HEADERS })
 }
