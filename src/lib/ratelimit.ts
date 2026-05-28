@@ -37,6 +37,13 @@ export const eventsLimiter = new Ratelimit({
   prefix: 'rl:events',
 })
 
+export const pageviewLimiter = new Ratelimit({
+  redis: rlRedis,
+  limiter: Ratelimit.slidingWindow(60, '60 s'),
+  analytics: false,
+  prefix: 'rl:pv',
+})
+
 export function clientIp(req: Request): string | null {
   // dabpose.fun sits behind a Cloudflare proxy. CF-Connecting-IP is the real
   // visitor IP; x-forwarded-for's first hop is now Cloudflare itself.
