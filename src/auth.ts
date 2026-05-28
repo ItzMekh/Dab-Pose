@@ -2,7 +2,7 @@ import NextAuth from 'next-auth'
 import Credentials from 'next-auth/providers/credentials'
 import Google from 'next-auth/providers/google'
 import { compare } from 'bcryptjs'
-import { headers, cookies } from 'next/headers'
+import { headers } from 'next/headers'
 import { db } from '@/lib/db'
 import { logError } from '@/lib/log'
 import { users } from '@/lib/schema'
@@ -16,20 +16,16 @@ const COUNTRY_RE = /^[A-Z]{2}$/
 async function detectCountry(): Promise<string> {
   try {
     const h = await headers()
+    // Middleware strips any client-supplied x-dab-country before setting
+    // its own value, so this header is authoritative when present.
     const fromMiddleware = h.get('x-dab-country')?.toUpperCase() ?? ''
     if (COUNTRY_RE.test(fromMiddleware) && fromMiddleware !== 'XX') return fromMiddleware
-    const fromHeaders = clientCountryFromHeaders(h)
-    if (fromHeaders !== 'XX') return fromHeaders
+    return clientCountryFromHeaders(h)
   } catch {
-    // headers() unavailable in this auth context — try cookie below.
+    // headers() unavailable in this auth context — accept XX rather than
+    // trust a spoofable client-readable cookie.
+    return 'XX'
   }
-  try {
-    const c = (await cookies()).get('__dab_country')?.value?.toUpperCase() ?? ''
-    if (COUNTRY_RE.test(c)) return c
-  } catch {
-    // cookies() also unavailable — last resort fallthrough.
-  }
-  return 'XX'
 }
 
 export const { handlers, auth, signIn, signOut } = NextAuth({

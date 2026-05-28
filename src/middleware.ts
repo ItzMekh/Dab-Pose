@@ -2,28 +2,22 @@ import { auth } from '@/auth'
 import { NextResponse } from 'next/server'
 import { clientCountryFromHeaders } from '@/lib/client-meta'
 
-const COUNTRY_COOKIE = '__dab_country'
-
 export default auth((req) => {
   const country = clientCountryFromHeaders(req.headers)
 
   const headers = new Headers(req.headers)
+  // Strip any client-supplied x-dab-country before injecting the
+  // server-resolved value. Without this, a client could spoof their
+  // country by setting the header directly on routes inside the matcher.
+  headers.delete('x-dab-country')
   headers.set('x-dab-country', country)
 
   const isAuthedOnAuthPage =
     !!req.auth && (req.nextUrl.pathname === '/signup' || req.nextUrl.pathname === '/login')
 
-  const res = isAuthedOnAuthPage
+  return isAuthedOnAuthPage
     ? NextResponse.redirect(new URL('/', req.url))
     : NextResponse.next({ request: { headers } })
-
-  res.cookies.set(COUNTRY_COOKIE, country, {
-    maxAge: 600,
-    sameSite: 'lax',
-    secure: process.env.NODE_ENV === 'production',
-    path: '/',
-  })
-  return res
 })
 
 export const config = {
