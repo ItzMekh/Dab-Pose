@@ -12,9 +12,12 @@ import type { NextConfig } from 'next'
 // - 'unsafe-inline' on script-src is required for Next.js's runtime
 //   hydration script and Framer Motion. Switch to a nonce-based CSP when
 //   the project upgrades to Next.js 16 (which supports it natively).
+// - 'wasm-unsafe-eval' is required for MediaPipe Holistic's WASM module
+//   (WebAssembly.instantiate). It only enables WASM compilation, NOT JS
+//   eval(), so it's safer than full 'unsafe-eval'.
 const cspDirectives = [
   "default-src 'self'",
-  "script-src 'self' 'unsafe-inline' https://vercel.live https://va.vercel-scripts.com https://challenges.cloudflare.com https://static.cloudflareinsights.com",
+  "script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' https://vercel.live https://va.vercel-scripts.com https://challenges.cloudflare.com https://static.cloudflareinsights.com",
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
   "img-src 'self' data: blob: https://*.googleusercontent.com https://*.vercel.app https://dabpose.fun",
   "font-src 'self' https://fonts.gstatic.com",
